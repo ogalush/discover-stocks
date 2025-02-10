@@ -4,7 +4,24 @@ from datetime import datetime, date
 import re
 import streamlit.components.v1 as components
 
-# ========= DB 初期化 =========
+# ---------- クエリパラメータから対象日を取得 ----------
+query_params = st.query_params
+if 'date' in query_params:
+    date_raw = query_params['date']
+    date_param = date_raw.strip()  # 前後の余分な空白を除去
+    try:
+        # yyyymmdd 形式から date オブジェクトに変換
+        selected_date = datetime.strptime(date_param, "%Y%m%d").date()
+    except ValueError:
+        st.error("URLのdateパラメータが正しい形式ではありません。YYYYMMDD形式で指定してください。")
+        selected_date = date.today()
+else:
+    selected_date = date.today()
+
+# 選択した日付を文字列（例："2025-02-09"）に変換
+selected_date_str = selected_date.strftime("%Y-%m-%d")
+
+# ---------- DB 初期化 ----------
 def get_connection():
     # SQLite の DB ファイル（survey.db）に接続（マルチスレッド対応のため check_same_thread=False）
     return sqlite3.connect("survey.db", check_same_thread=False)
@@ -28,15 +45,16 @@ def init_db():
 
 init_db()
 
-# ========= 定数 =========
+# ---------- 定数 ----------
 # 入力セットの最大数（デフォルト 6、後で変更可能）
 MAX_SETS = 6
 
-# ========= サイドバー：日付入力・ページ選択 =========
+# ---------- サイドバー：日付入力・ページ選択 ----------
 st.sidebar.header("【対象日選択】")
-# 日付入力ウィジェット（初期値は本日）
-selected_date = st.sidebar.date_input("対象日を入力してください", value=date.today())
-# 選択した日付を文字列（例："2025-02-09"）に変換
+# URLで指定された日付を初期値に設定
+date_input_value = st.sidebar.date_input("対象日を入力してください", value=selected_date)
+# ユーザーがウィジェットで変更した場合、その値を採用
+selected_date = date_input_value
 selected_date_str = selected_date.strftime("%Y-%m-%d")
 st.sidebar.write(f"選択中の日付: {selected_date_str}")
 
@@ -44,7 +62,7 @@ st.sidebar.markdown("---")
 st.sidebar.title("ページ選択")
 page = st.sidebar.radio("メニュー", ("銘柄発掘アンケート", "集計"))
 
-# ========= ページ：銘柄発掘アンケート =========
+# ---------- ページ：銘柄発掘アンケート ----------
 def survey_page():
     st.title("銘柄発掘アンケート")
     st.write(f"【対象日】{selected_date_str}")
@@ -89,15 +107,15 @@ def survey_page():
 
     with col_chart:
         st.header("TradingView")
-        # 各確定済みの銘柄コードに対して TradingView のチャートを iframe で表示
+        # 各確定済みの銘柄コードに対して TradingView のチャート（リンク）を表示
         for i, code in enumerate(confirmed_codes):
             if code != "":
                 st.subheader(f"チャート {i+1}: {code}")
-                # TradingView の URL（必要に応じて URL のパラメータなどを変更してください）
+                # ※ TradingView のウィジェットで埋め込みたい場合は別途ウィジェット用のHTMLを利用してください
                 url = f"https://www.tradingview.com/chart/?symbol={code}"
                 st.markdown(f'[{code}のチャートを表示する]({url})', unsafe_allow_html=True)
 
-# ========= ページ：集計 =========
+# ---------- ページ：集計 ----------
 def aggregation_page():
     st.title("銘柄発掘アンケート 集計")
     st.write(f"【対象日】{selected_date_str}")
@@ -141,7 +159,7 @@ def aggregation_page():
     filename = selected_date.strftime("%Y%m%d") + "銘柄発掘.txt"
     st.download_button("Export", data=file_content, file_name=filename, mime="text/plain")
 
-# ========= ページ切り替え =========
+# ---------- ページ切り替え ----------
 if page == "銘柄発掘アンケート":
     survey_page()
 elif page == "集計":
