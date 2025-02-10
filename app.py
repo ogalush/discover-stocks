@@ -144,23 +144,24 @@ def aggregation_page():
     
     if results:
         st.write("最新の集計結果（投票前のアンケート集計）")
-        header_cols = st.columns([1, 2, 1, 1])
+        # カラムの幅比率を調整
+        header_cols = st.columns([1, 1, 2, 1])
         header_cols[0].write("銘柄コード")
-        header_cols[1].write("銘柄名")
-        header_cols[2].write("アンケート票数")
-        header_cols[3].write("投票対象")
+        header_cols[1].write("投票")  # チェックボックス用カラム
+        header_cols[2].write("銘柄名")
+        header_cols[3].write("アンケート票数")
         
         # 結果表示と同時にチェックボックスを配置
         for row in results:
             stock_code, survey_count = row
             url = f"https://www.tradingview.com/chart/?symbol={stock_code}"
             stock_name_link = f"[{stock_code}]({url})"
-            cols = st.columns([1, 2, 1, 1])
+            cols = st.columns([1, 1, 2, 1])
             cols[0].write(stock_code)
-            cols[1].markdown(stock_name_link, unsafe_allow_html=True)
-            cols[2].write(survey_count)
-            # 各チェックボックスのキーは "checkbox_{銘柄コード}"
-            cols[3].checkbox("選択", key=f"checkbox_{stock_code}")
+            # チェックボックスを銘柄名の左に配置
+            cols[1].checkbox("", key=f"checkbox_{stock_code}")
+            cols[2].markdown(stock_name_link, unsafe_allow_html=True)
+            cols[3].write(survey_count)
         
         st.markdown("---")
         # [投票] ボタン：チェックボックスで選択した行の銘柄コードを vote テーブルに保存する
