@@ -77,13 +77,13 @@ st.sidebar.write(f"選択中の日付: {selected_date_str}")
 st.sidebar.markdown("---")
 st.sidebar.title("ページ選択")
 # ページ選択：銘柄発掘アンケート / 集計 / 投票ページ
-page = st.sidebar.radio("メニュー", ("銘柄発掘アンケート", "集計", "投票ページ"))
+page = st.sidebar.radio("メニュー", ("① 銘柄コード登録", "② 銘柄投票", "③ 投票結果確認"))
 
 # ======================
 # ページ：銘柄発掘アンケート
 # ======================
 def survey_page():
-    st.title("銘柄発掘アンケート")
+    st.title("① 銘柄コード登録")
     st.write(f"【対象日】{selected_date_str}")
     st.write("以下の入力欄に、半角英数字・大文字のみの銘柄コードを入力してください。")
     
@@ -129,7 +129,7 @@ def survey_page():
 # ページ：集計（投票用）
 # ======================
 def aggregation_page():
-    st.title("銘柄発掘アンケート 集計")
+    st.title("② 銘柄投票")
     st.write(f"【対象日】{selected_date_str}")
     
     # surveyテーブルから、対象日の銘柄コードごとの件数を集計（多い順）
@@ -202,7 +202,7 @@ def aggregation_page():
 # ページ：投票ページ
 # ======================
 def vote_page():
-    st.title("銘柄投票結果")
+    st.title("③ 投票結果確認")
     st.write(f"【対象日】{selected_date_str}")
     
     # voteテーブルから、対象日の各銘柄の投票数を集計（多い順）
@@ -243,9 +243,9 @@ def vote_page():
 # ======================
 # ページ切り替え
 # ======================
-if page == "銘柄発掘アンケート":
+if page == "① 銘柄コード登録":
     survey_page()
-elif page == "集計":
+elif page == "② 銘柄投票":
     aggregation_page()
-elif page == "投票ページ":
+elif page == "③ 投票結果確認":
     vote_page()
