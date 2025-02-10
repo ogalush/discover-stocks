@@ -96,39 +96,6 @@ def survey_page():
                 # TradingView の URL（必要に応じて URL のパラメータなどを変更してください）
                 url = f"https://www.tradingview.com/chart/?symbol={code}"
                 st.markdown(f'[{code}のチャートを表示する]({url})', unsafe_allow_html=True)
-                # components.iframe(url, height=400, scrolling=True)
-                
-                # # 修正後のコード（TradingView ウィジェットを利用）
-                # if code.isdigit():
-                #     symbol = f"TYO:{code}"
-                # else:
-                #     symbol = code
-
-                # chart_html = f"""
-                # <!-- TradingView Widget BEGIN -->
-                # <div class="tradingview-widget-container">
-                # <div id="tradingview_{code}"></div>
-                # <script type="text/javascript" src="https://s3.tradingview.com/tv.js"></script>
-                # <script type="text/javascript">
-                #     new TradingView.widget({{
-                #     "width": "100%",
-                #     "height": 400,
-                #     "symbol": "{symbol}",
-                #     "interval": "D",
-                #     "timezone": "Etc/UTC",
-                #     "theme": "light",
-                #     "style": "1",
-                #     "locale": "ja",
-                #     "toolbar_bg": "#f1f3f6",
-                #     "enable_publishing": false,
-                #     "allow_symbol_change": true,
-                #     "container_id": "tradingview_{code}"
-                #     }});
-                # </script>
-                # </div>
-                # <!-- TradingView Widget END -->
-                # """
-                # components.html(chart_html, height=420)
 
 # ========= ページ：集計 =========
 def aggregation_page():
