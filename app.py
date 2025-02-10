@@ -51,7 +51,7 @@ MAX_SETS = 6
 
 # ---------- サイドバー：日付入力・ページ選択 ----------
 st.sidebar.header("【対象日選択】")
-# URLで指定された日付を初期値に設定
+# URLで指定された日付を初期値に設定（ユーザーが変更可能）
 date_input_value = st.sidebar.date_input("対象日を入力してください", value=selected_date)
 # ユーザーがウィジェットで変更した場合、その値を採用
 selected_date = date_input_value
@@ -68,52 +68,48 @@ def survey_page():
     st.write(f"【対象日】{selected_date_str}")
     st.write("以下の入力欄に、半角英数字・大文字のみの銘柄コードを入力してください。")
     
-    # 画面を左右に分割（左：入力、右：チャート）
-    col_input, col_chart = st.columns(2)
-    confirmed_codes = []  # 各入力セットで確定された銘柄コードを格納
-
-    with col_input:
-        st.header("入力")
-        # MAX_SETS 個の入力セットを作成
-        for i in range(MAX_SETS):
-            code = st.text_input(f"銘柄コード {i+1}", key=f"code_{i}")
-            if st.button(f"確定 {i+1}", key=f"confirm_button_{i}"):
-                # 入力値の検証：半角英数字・大文字のみ許可
-                if re.match(r'^[A-Z0-9]+$', code):
-                    st.session_state[f"confirmed_{i}"] = code
-                    st.success(f"銘柄コード {code} を確定しました。")
+    # 各入力セットを1行として作成：左側にテキスト入力＋「確定」ボタン、右側にTradingViewリンクを表示
+    for i in range(MAX_SETS):
+        # 行全体を左右2カラムに分割（左：入力、右：リンク）
+        row = st.columns([3, 3])
+        
+        # 左側：テキスト入力と確定ボタンを横並びに配置
+        with row[0]:
+            inner_cols = st.columns([3, 1])
+            code_input = inner_cols[0].text_input(f"銘柄コード {i+1}", key=f"code_{i}")
+            if inner_cols[1].button("確定", key=f"confirm_button_{i}"):
+                # 入力値の検証（半角英数字・大文字のみ）
+                if re.match(r'^[A-Z0-9]+$', code_input):
+                    st.session_state[f"confirmed_{i}"] = code_input
+                    st.success(f"銘柄コード {code_input} を確定しました。右側の『{code_input}のチャートを表示する』リンクをクリックして、銘柄コードが正しいか確認してください。")
                 else:
                     st.error("入力が不正です。半角英数字・大文字のみを使用してください。")
-            # セッションに保存済みの場合はそのコードを利用
+        
+        # 右側：該当行のTradingViewリンクを表示（未確定の場合は空白のプレースホルダー）
+        with row[1]:
             if f"confirmed_{i}" in st.session_state:
-                confirmed_codes.append(st.session_state[f"confirmed_{i}"])
+                confirmed_code = st.session_state[f"confirmed_{i}"]
+                url = f"https://www.tradingview.com/chart/?symbol={confirmed_code}"
+                st.markdown(f"[{confirmed_code}のチャートを表示する]({url})", unsafe_allow_html=True)
             else:
-                confirmed_codes.append("")
-        st.markdown("---")
-        # [Send] ボタン押下で、対象日と銘柄コードのセットをDBに保存（空欄は無視）
-        if st.button("Send"):
-            conn = get_connection()
-            c = conn.cursor()
-            now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-            for code in confirmed_codes:
-                if code != "":
-                    c.execute(
-                        "INSERT INTO survey (survey_date, stock_code, created_at) VALUES (?, ?, ?)",
-                        (selected_date_str, code, now)
-                    )
-            conn.commit()
-            conn.close()
-            st.success("入力内容をデータベースに保存しました。")
+                st.write("")  # 空白で高さを合わせる
 
-    with col_chart:
-        st.header("TradingView")
-        # 各確定済みの銘柄コードに対して TradingView のチャート（リンク）を表示
-        for i, code in enumerate(confirmed_codes):
-            if code != "":
-                st.subheader(f"チャート {i+1}: {code}")
-                # ※ TradingView のウィジェットで埋め込みたい場合は別途ウィジェット用のHTMLを利用してください
-                url = f"https://www.tradingview.com/chart/?symbol={code}"
-                st.markdown(f'[{code}のチャートを表示する]({url})', unsafe_allow_html=True)
+    st.markdown("---")
+    if st.button("Send"):
+        conn = get_connection()
+        c = conn.cursor()
+        now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        # 各入力行の確定された銘柄コードを対象日とともにDBへ保存
+        for i in range(MAX_SETS):
+            if f"confirmed_{i}" in st.session_state:
+                code = st.session_state[f"confirmed_{i}"]
+                c.execute(
+                    "INSERT INTO survey (survey_date, stock_code, created_at) VALUES (?, ?, ?)",
+                    (selected_date_str, code, now)
+                )
+        conn.commit()
+        conn.close()
+        st.success("入力内容をデータベースに保存しました。")
 
 # ---------- ページ：集計 ----------
 def aggregation_page():
