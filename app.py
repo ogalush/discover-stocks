@@ -42,7 +42,7 @@ st.sidebar.write(f"選択中の日付: {selected_date_str}")
 
 st.sidebar.markdown("---")
 st.sidebar.title("ページ選択")
-page = st.sidebar.radio("", ("銘柄発掘アンケート", "集計"))
+page = st.sidebar.radio("メニュー", ("銘柄発掘アンケート", "集計"))
 
 # ========= ページ：銘柄発掘アンケート =========
 def survey_page():
@@ -163,7 +163,7 @@ def aggregation_page():
             cols[0].write(stock_code)
             cols[1].markdown(stock_name_link, unsafe_allow_html=True)
             cols[2].write(vote_count)
-            cols[3].checkbox("", key=f"checkbox_{stock_code}")
+            cols[3].checkbox("Good", key=f"checkbox_{stock_code}")
     else:
         st.write("対象日のデータはまだありません。")
     
