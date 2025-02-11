@@ -137,41 +137,48 @@ def aggregation_page():
     st.title("② 銘柄投票")
     st.write(f"【対象日】{selected_date_str}")
     
-    # surveyテーブルから、対象日の銘柄コードごとの件数（アンケート票数）を集計（多い順）
+    # surveyテーブルから対象日の各銘柄のアンケート票数を集計（もともとはSQLで降順ソート）
     conn = get_connection()
     c = conn.cursor()
     c.execute(
-        "SELECT stock_code, COUNT(*) as survey_count FROM survey WHERE survey_date = ? GROUP BY stock_code ORDER BY survey_count DESC",
+        "SELECT stock_code, COUNT(*) as survey_count FROM survey WHERE survey_date = ? GROUP BY stock_code",
         (selected_date_str,)
     )
     results = c.fetchall()
     conn.close()
     
     if results:
-        # Exportボタンを【対象日】の直後に移動
-        codes = [row[0] for row in results]
+        # 動的な並び替え方法の選択（デフォルトは「アンケート票数 降順」）
+        sort_option = st.selectbox("並び替え方法を選択", ["銘柄コード 昇順", "アンケート票数 降順"])
+        if sort_option == "銘柄コード 昇順":
+            sorted_results = sorted(results, key=lambda x: x[0])
+        else:
+            sorted_results = sorted(results, key=lambda x: x[1], reverse=True)
+        
+        # Exportボタンを【対象日】の直後に表示
+        codes = [row[0] for row in sorted_results]
         file_content = "\n".join(codes)
         filename = selected_date.strftime("%Y%m%d") + "銘柄発掘.txt"
         st.download_button("銘柄コードExport", data=file_content, file_name=filename, mime="text/plain")
         
-        # 投票方法の説明を追加
+        # 投票方法の説明
         st.info("""
         【投票方法】
         1. 注目したい銘柄のチェックボックスを選択（最大10銘柄まで）
         2. 銘柄名のリンクをクリックすると、TradingViewでチャートを確認できます
         3. 選択が完了したら下部の「投票」ボタンを押してください
         """)
-        
         st.markdown("---")
-
+        
         st.write("最新の集計結果（投票前のアンケート集計）")
-        # カラムの幅比率を調整
+        
+        # カラムの幅比率を調整して表形式で表示
         header_cols = st.columns([1, 1, 1])
         header_cols[0].write("銘柄コード投票")  # チェックボックス用カラム
         header_cols[1].write("銘柄名")
         header_cols[2].write("アンケート票数")
         
-        for row in results:
+        for row in sorted_results:
             stock_code, survey_count = row
             url = f"https://www.tradingview.com/chart/?symbol={stock_code}"
             stock_name_link = f'<a href="{url}" target="_blank" rel="noopener noreferrer">{stock_code}</a>'
@@ -183,9 +190,8 @@ def aggregation_page():
         st.markdown("---")
         # [投票] ボタン：チェックボックスで選択した銘柄コードを vote テーブルに保存する
         if st.button("投票"):
-            # チェックされた銘柄コードを収集
             selected_codes = []
-            for row in results:
+            for row in sorted_results:
                 stock_code = row[0]
                 if st.session_state.get(f"checkbox_{stock_code}"):
                     selected_codes.append(stock_code)
