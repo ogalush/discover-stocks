@@ -104,7 +104,11 @@ def survey_page():
             if f"confirmed_{i}" in st.session_state:
                 confirmed_code = st.session_state[f"confirmed_{i}"]
                 url = f"https://www.tradingview.com/chart/?symbol={confirmed_code}"
-                st.markdown(f"[{confirmed_code}のチャートを表示する]({url})", unsafe_allow_html=True)
+                # HTMLのアンカー要素でtarget="_blank"を指定して新規タブで開くようにする
+                st.markdown(
+                    f'<a href="{url}" target="_blank" rel="noopener noreferrer">{confirmed_code}のチャートを表示する</a>',
+                    unsafe_allow_html=True
+                )
             else:
                 st.write("")  # 空白で高さを合わせる
     
@@ -155,7 +159,7 @@ def aggregation_page():
         for row in results:
             stock_code, survey_count = row
             url = f"https://www.tradingview.com/chart/?symbol={stock_code}"
-            stock_name_link = f"[{stock_code}]({url})"
+            stock_name_link = f'<a href="{url}" target="_blank" rel="noopener noreferrer">{stock_code}</a>'
             cols = st.columns([1, 1, 2, 1])
             cols[0].write(stock_code)
             # チェックボックスを銘柄名の左に配置
@@ -225,7 +229,7 @@ def vote_page():
         for row in results:
             stock_code, vote_count = row
             url = f"https://www.tradingview.com/chart/?symbol={stock_code}"
-            stock_name_link = f"[{stock_code}]({url})"
+            stock_name_link = f'<a href="{url}" target="_blank" rel="noopener noreferrer">{stock_code}</a>'
             cols = st.columns([1, 2, 1])
             cols[0].write(stock_code)
             cols[1].markdown(stock_name_link, unsafe_allow_html=True)
