@@ -153,6 +153,15 @@ def aggregation_page():
         file_content = "\n".join(codes)
         filename = selected_date.strftime("%Y%m%d") + "銘柄発掘.txt"
         st.download_button("銘柄コードExport", data=file_content, file_name=filename, mime="text/plain")
+        
+        # 投票方法の説明を追加
+        st.info("""
+        【投票方法】
+        1. 注目したい銘柄のチェックボックスを選択（最大10銘柄まで）
+        2. 銘柄名のリンクをクリックすると、TradingViewでチャートを確認できます
+        3. 選択が完了したら下部の「投票」ボタンを押してください
+        """)
+        
         st.markdown("---")
 
         st.write("最新の集計結果（投票前のアンケート集計）")
