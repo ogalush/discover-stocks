@@ -221,6 +221,20 @@ def vote_page():
     conn.close()
     
     if results:
+        # ワードクラウド用の辞書を作成（銘柄コードを単語、投票数を頻度として利用）
+        vote_dict = {row[0]: row[1] for row in results}
+        try:
+            from wordcloud import WordCloud
+            import matplotlib.pyplot as plt
+            # ワードクラウドの生成
+            wc = WordCloud(width=800, height=400, background_color='white').generate_from_frequencies(vote_dict)
+            plt.figure(figsize=(10, 5))
+            plt.imshow(wc, interpolation='bilinear')
+            plt.axis("off")
+            st.pyplot(plt)
+        except ImportError:
+            st.error("wordcloudおよびmatplotlibライブラリが必要です。'pip install wordcloud matplotlib'でインストールしてください。")
+        st.markdown("---")
         st.write("投票結果")
         header_cols = st.columns([1, 2, 1])
         header_cols[0].write("銘柄コード")
@@ -235,21 +249,6 @@ def vote_page():
             cols[1].markdown(stock_name_link, unsafe_allow_html=True)
             cols[2].write(vote_count)
         
-        st.markdown("---")
-        st.subheader("投票結果")
-        # ワードクラウド用の辞書を作成（銘柄コードを単語、投票数を頻度として利用）
-        vote_dict = {row[0]: row[1] for row in results}
-        try:
-            from wordcloud import WordCloud
-            import matplotlib.pyplot as plt
-            # ワードクラウドの生成
-            wc = WordCloud(width=800, height=400, background_color='white').generate_from_frequencies(vote_dict)
-            plt.figure(figsize=(10, 5))
-            plt.imshow(wc, interpolation='bilinear')
-            plt.axis("off")
-            st.pyplot(plt)
-        except ImportError:
-            st.error("wordcloudおよびmatplotlibライブラリが必要です。'pip install wordcloud matplotlib'でインストールしてください。")
     else:
         st.write("対象日の投票結果はまだありません。")
     
