@@ -148,6 +148,13 @@ def aggregation_page():
     conn.close()
     
     if results:
+        # Exportボタンを【対象日】の直後に移動
+        codes = [row[0] for row in results]
+        file_content = "\n".join(codes)
+        filename = selected_date.strftime("%Y%m%d") + "銘柄発掘.txt"
+        st.download_button("銘柄コードExport", data=file_content, file_name=filename, mime="text/plain")
+        st.markdown("---")
+
         st.write("最新の集計結果（投票前のアンケート集計）")
         # カラムの幅比率を調整
         header_cols = st.columns([1, 1, 1])
@@ -192,14 +199,6 @@ def aggregation_page():
     else:
         st.write("対象日のデータはまだありません。")
 
-    # 既存のExportボタン（アンケート結果のエクスポート用）
-    st.markdown("---")
-    if results:
-        codes = [row[0] for row in results]
-        file_content = "\n".join(codes)
-        filename = selected_date.strftime("%Y%m%d") + "銘柄発掘.txt"
-        st.download_button("銘柄コードExport", data=file_content, file_name=filename, mime="text/plain")
-
 # ======================
 # ページ：投票結果確認
 # ======================
@@ -218,6 +217,13 @@ def vote_page():
     conn.close()
     
     if results:
+        # Exportボタンを【対象日】の直後に移動
+        codes = [row[0] for row in results]
+        file_content = "\n".join(codes)
+        filename = selected_date.strftime("%Y%m%d") + "投票結果.txt"
+        st.download_button("銘柄コードExport", data=file_content, file_name=filename, mime="text/plain")
+        st.markdown("---")
+
         # ワードクラウド用の辞書を作成（銘柄コードを単語、投票数を頻度として利用）
         vote_dict = {row[0]: row[1] for row in results}
         try:
@@ -248,14 +254,6 @@ def vote_page():
         
     else:
         st.write("対象日の投票結果はまだありません。")
-    
-    st.markdown("---")
-    # [Export] ボタン：投票結果の銘柄コード一覧をTXTファイルとして出力
-    if results:
-        codes = [row[0] for row in results]
-        file_content = "\n".join(codes)
-        filename = selected_date.strftime("%Y%m%d") + "投票結果.txt"
-        st.download_button("銘柄コードExport", data=file_content, file_name=filename, mime="text/plain")
 
 # ======================
 # ページ切り替え
