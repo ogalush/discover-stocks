@@ -1,5 +1,6 @@
 import streamlit as st
 import sqlite3
+# import pandas as pd
 from datetime import datetime, date
 import re
 import streamlit.components.v1 as components
@@ -61,8 +62,8 @@ init_db()
 # ======================
 # 定数
 # ======================
-MAX_SETS = 7  # 銘柄発掘アンケートの入力セット数（後で変更可能）
-MAX_VOTE_SELECTION = 10  # 集計ページでのチェックボックスの最大選択数（後で変更可能、default:10）
+MAX_SETS = 7            # 銘柄発掘アンケートの入力セット数（後で変更可能）
+MAX_VOTE_SELECTION = 10 # 集計ページでのチェックボックスの最大選択数（後で変更可能、default:10）
 
 # ======================
 # サイドバー：日付入力・ページ選択
@@ -76,11 +77,11 @@ st.sidebar.write(f"選択中の日付: {selected_date_str}")
 
 st.sidebar.markdown("---")
 st.sidebar.title("ページ選択")
-# ページ選択：銘柄発掘アンケート / 集計 / 投票ページ
+# ページ選択：銘柄発掘アンケート / 集計（投票用） / 投票結果確認
 page = st.sidebar.radio("メニュー", ("① 銘柄コード登録", "② 銘柄投票", "③ 投票結果確認"))
 
 # ======================
-# ページ：銘柄発掘アンケート
+# ページ：銘柄発掘アンケート（銘柄コード登録）
 # ======================
 def survey_page():
     st.title("① 銘柄コード登録")
@@ -136,7 +137,7 @@ def aggregation_page():
     st.title("② 銘柄投票")
     st.write(f"【対象日】{selected_date_str}")
     
-    # surveyテーブルから、対象日の銘柄コードごとの件数を集計（多い順）
+    # surveyテーブルから、対象日の銘柄コードごとの件数（アンケート票数）を集計（多い順）
     conn = get_connection()
     c = conn.cursor()
     c.execute(
@@ -154,19 +155,17 @@ def aggregation_page():
         header_cols[1].write("銘柄名")
         header_cols[2].write("アンケート票数")
         
-        # 結果表示と同時にチェックボックスを配置
         for row in results:
             stock_code, survey_count = row
             url = f"https://www.tradingview.com/chart/?symbol={stock_code}"
             stock_name_link = f'<a href="{url}" target="_blank" rel="noopener noreferrer">{stock_code}</a>'
             cols = st.columns([1, 1, 1])
-            # チェックボックスのラベルに銘柄コードを設定
             cols[0].checkbox(stock_code, key=f"checkbox_{stock_code}")
             cols[1].markdown(stock_name_link, unsafe_allow_html=True)
             cols[2].write(survey_count)
         
         st.markdown("---")
-        # [投票] ボタン：チェックボックスで選択した行の銘柄コードを vote テーブルに保存する
+        # [投票] ボタン：チェックボックスで選択した銘柄コードを vote テーブルに保存する
         if st.button("投票"):
             # チェックされた銘柄コードを収集
             selected_codes = []
@@ -202,7 +201,7 @@ def aggregation_page():
         st.download_button("銘柄コードExport", data=file_content, file_name=filename, mime="text/plain")
 
 # ======================
-# ページ：投票ページ
+# ページ：投票結果確認
 # ======================
 def vote_page():
     st.title("③ 投票結果確認")
@@ -255,7 +254,7 @@ def vote_page():
     if results:
         codes = [row[0] for row in results]
         file_content = "\n".join(codes)
-        filename = selected_date.strftime("%Y%m%d") + "銘柄投票結果.txt"
+        filename = selected_date.strftime("%Y%m%d") + "投票結果.txt"
         st.download_button("銘柄コードExport", data=file_content, file_name=filename, mime="text/plain")
 
 # ======================
