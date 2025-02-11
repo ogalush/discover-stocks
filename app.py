@@ -97,7 +97,7 @@ def survey_page():
                 # 入力値の検証（半角英数字・大文字のみ）
                 if re.match(r'^[A-Z0-9]+$', code_input):
                     st.session_state[f"confirmed_{i}"] = code_input
-                    st.success(f"銘柄コード {code_input} を確定しました。右側のリンクをクリックして確認してください。")
+                    st.success(f"銘柄コード {code_input} を確定しました。リンクをクリックして確認してください。（アプリが開く場合は長押しでプレビュー画面で確認してください。）")
                 else:
                     st.error("入力が不正です。半角英数字・大文字のみを使用してください。")
         with row[1]:
