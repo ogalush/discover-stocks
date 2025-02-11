@@ -236,7 +236,7 @@ def vote_page():
             cols[2].write(vote_count)
         
         st.markdown("---")
-        st.subheader("ワードクラウド")
+        st.subheader("投票結果")
         # ワードクラウド用の辞書を作成（銘柄コードを単語、投票数を頻度として利用）
         vote_dict = {row[0]: row[1] for row in results}
         try:
