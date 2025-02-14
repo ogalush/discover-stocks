@@ -1,281 +1,36 @@
 import streamlit as st
-import sqlite3
-# import pandas as pd
-from datetime import datetime, date
-import re
-import streamlit.components.v1 as components
+from utils.db import init_db
+from utils.common import get_date_from_params
+from pages import top, survey, vote, result
+from datetime import date
 
-# ======================
-# URLパラメータから対象日を取得（yyyymmdd形式）
-# ======================
-query_params = st.query_params
-if 'date' in query_params:
-    date_param = query_params['date'].strip()  # 前後の空白を除去
-    try:
-        # yyyymmdd形式からdateオブジェクトに変換
-        selected_date = datetime.strptime(date_param, "%Y%m%d").date()
-    except ValueError:
-        st.error("URLのdateパラメータが正しい形式ではありません。YYYYMMDD形式で指定してください。")
-        selected_date = date.today()
-else:
-    selected_date = date.today()
-
-selected_date_str = selected_date.strftime("%Y-%m-%d")  # "2025-02-09"形式
-
-# ======================
-# DB 初期化
-# ======================
-def get_connection():
-    # SQLite の DB ファイル (survey.db) に接続（マルチスレッド対応のため check_same_thread=False）
-    return sqlite3.connect("survey.db", check_same_thread=False)
-
-def init_db():
-    conn = get_connection()
-    c = conn.cursor()
-    # 銘柄発掘アンケートの回答保存テーブル（survey_date: 対象日、stock_code: 銘柄コード）
-    c.execute(
-        """
-        CREATE TABLE IF NOT EXISTS survey (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            survey_date TEXT NOT NULL,
-            stock_code TEXT NOT NULL,
-            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-        )
-        """
-    )
-    # 投票結果を保存するテーブル（vote_date: 対象日、stock_code: 銘柄コード）
-    c.execute(
-        """
-        CREATE TABLE IF NOT EXISTS vote (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            vote_date TEXT NOT NULL,
-            stock_code TEXT NOT NULL,
-            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-        )
-        """
-    )
-    conn.commit()
-    conn.close()
-
+# DB初期化
 init_db()
 
-# ======================
-# 定数
-# ======================
-MAX_SETS = 7            # 銘柄発掘アンケートの入力セット数（後で変更可能）
-MAX_VOTE_SELECTION = 10 # 集計ページでのチェックボックスの最大選択数（後で変更可能、default:10）
+# URLパラメータから対象ページとdateを取得
+query_params = st.query_params
+page = query_params.get('page', 'top')
+selected_date = get_date_from_params(query_params)
+date_str = selected_date.strftime("%Y%m%d")
 
-# ======================
-# サイドバー：日付入力・ページ選択
-# ======================
-st.sidebar.header("【対象日選択】")
-# URLで指定された日付を初期値に設定（ユーザーは変更可能）
-date_input_value = st.sidebar.date_input("対象日を入力してください", value=selected_date)
-selected_date = date_input_value
-selected_date_str = selected_date.strftime("%Y-%m-%d")
-st.sidebar.write(f"選択中の日付: {selected_date_str}")
+# サイドバーに日付選択を追加
+st.sidebar.title("日付選択")
+selected_date = st.sidebar.date_input("対象日", value=selected_date)
+date_str = selected_date.strftime("%Y%m%d")
 
-st.sidebar.markdown("---")
+# サイドバーにページリンクを追加
 st.sidebar.title("ページ選択")
-# ページ選択：銘柄発掘アンケート / 集計（投票用） / 投票結果確認
-page = st.sidebar.radio("メニュー", ("① 銘柄コード登録", "② 銘柄投票", "③ 投票結果確認"))
+st.sidebar.markdown(f'<a href="./?page=top&date={date_str}" target="_self">トップページ</a>', unsafe_allow_html=True)
+st.sidebar.markdown(f'<a href="./?page=survey&date={date_str}" target="_self">① 銘柄コード登録</a>', unsafe_allow_html=True)
+st.sidebar.markdown(f'<a href="./?page=vote&date={date_str}" target="_self">② 銘柄投票</a>', unsafe_allow_html=True)
+st.sidebar.markdown(f'<a href="./?page=result&date={date_str}" target="_self">③ 投票結果確認</a>', unsafe_allow_html=True)
 
-# ======================
-# ページ：銘柄発掘アンケート（銘柄コード登録）
-# ======================
-def survey_page():
-    st.title("① 銘柄コード登録")
-    st.write(f"【対象日】{selected_date_str}")
-    st.write("以下の入力欄に、半角英数字・大文字のみの銘柄コードを入力してください。")
-    
-    # 各入力セットを1行として作成：左側にテキスト入力＋「確定」ボタン、右側にTradingViewリンクを表示
-    for i in range(MAX_SETS):
-        row = st.columns([3, 3])
-        with row[0]:
-            inner_cols = st.columns([3, 1])
-            code_input = inner_cols[0].text_input(f"銘柄コード {i+1}", key=f"code_{i}")
-            if inner_cols[1].button("確定", key=f"confirm_button_{i}"):
-                # 入力値の検証（半角英数字・大文字のみ）
-                if re.match(r'^[A-Z0-9]+$', code_input):
-                    st.session_state[f"confirmed_{i}"] = code_input
-                    st.success(f"銘柄コード {code_input} を確定しました。リンクをクリックして確認してください。（アプリが開く場合は長押しでプレビュー画面で確認してください。）")
-                else:
-                    st.error("入力が不正です。半角英数字・大文字のみを使用してください。")
-        with row[1]:
-            if f"confirmed_{i}" in st.session_state:
-                confirmed_code = st.session_state[f"confirmed_{i}"]
-                url = f"https://www.tradingview.com/chart/?symbol={confirmed_code}"
-                # HTMLのアンカー要素でtarget="_blank"を指定して新規タブで開くようにする
-                st.markdown(
-                    f'<a href="{url}" target="_blank" rel="noopener noreferrer">{confirmed_code}のチャートを表示する</a>',
-                    unsafe_allow_html=True
-                )
-            else:
-                st.write("")  # 空白で高さを合わせる
-    
-    st.markdown("---")
-    if st.button("送信"):
-        conn = get_connection()
-        c = conn.cursor()
-        now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-        # 各入力行の確定済み銘柄コードを対象日とともにDBへ保存
-        for i in range(MAX_SETS):
-            if f"confirmed_{i}" in st.session_state:
-                code = st.session_state[f"confirmed_{i}"]
-                c.execute(
-                    "INSERT INTO survey (survey_date, stock_code, created_at) VALUES (?, ?, ?)",
-                    (selected_date_str, code, now)
-                )
-        conn.commit()
-        conn.close()
-        st.success("入力内容をデータベースに保存しました。")
-
-# ======================
-# ページ：集計（投票用）
-# ======================
-def aggregation_page():
-    st.title("② 銘柄投票")
-    st.write(f"【対象日】{selected_date_str}")
-    
-    # surveyテーブルから対象日の各銘柄のアンケート票数を集計（もともとはSQLで降順ソート）
-    conn = get_connection()
-    c = conn.cursor()
-    c.execute(
-        "SELECT stock_code, COUNT(*) as survey_count FROM survey WHERE survey_date = ? GROUP BY stock_code",
-        (selected_date_str,)
-    )
-    results = c.fetchall()
-    conn.close()
-    
-    if results:
-        # 動的な並び替え方法の選択（デフォルトは「アンケート票数 降順」）
-        sort_option = st.selectbox("並び替え方法を選択", ["銘柄コード 昇順", "アンケート票数 降順"])
-        if sort_option == "銘柄コード 昇順":
-            sorted_results = sorted(results, key=lambda x: x[0])
-        else:
-            sorted_results = sorted(results, key=lambda x: x[1], reverse=True)
-        
-        # Exportボタンを【対象日】の直後に表示
-        codes = [row[0] for row in sorted_results]
-        file_content = "\n".join(codes)
-        filename = selected_date.strftime("%Y%m%d") + "銘柄発掘.txt"
-        st.download_button("銘柄コードExport", data=file_content, file_name=filename, mime="text/plain")
-        
-        # 投票方法の説明
-        st.info("""
-        【投票方法】
-        1. 注目したい銘柄のチェックボックスを選択（最大10銘柄まで）
-        2. 銘柄名のリンクをクリックすると、TradingViewでチャートを確認できます
-        3. 選択が完了したら下部の「投票」ボタンを押してください
-        """)
-        st.markdown("---")
-        
-        st.write("最新の集計結果（投票前のアンケート集計）")
-        
-        # カラムの幅比率を調整して表形式で表示
-        header_cols = st.columns([1, 1, 1])
-        header_cols[0].write("銘柄コード投票")  # チェックボックス用カラム
-        header_cols[1].write("銘柄名")
-        header_cols[2].write("アンケート票数")
-        
-        for row in sorted_results:
-            stock_code, survey_count = row
-            url = f"https://www.tradingview.com/chart/?symbol={stock_code}"
-            stock_name_link = f'<a href="{url}" target="_blank" rel="noopener noreferrer">{stock_code}</a>'
-            cols = st.columns([1, 1, 1])
-            cols[0].checkbox(stock_code, key=f"checkbox_{stock_code}")
-            cols[1].markdown(stock_name_link, unsafe_allow_html=True)
-            cols[2].write(survey_count)
-        
-        st.markdown("---")
-        # [投票] ボタン：チェックボックスで選択した銘柄コードを vote テーブルに保存する
-        if st.button("投票"):
-            selected_codes = []
-            for row in sorted_results:
-                stock_code = row[0]
-                if st.session_state.get(f"checkbox_{stock_code}"):
-                    selected_codes.append(stock_code)
-            if len(selected_codes) > MAX_VOTE_SELECTION:
-                st.error(f"投票は最大{MAX_VOTE_SELECTION}件まで選択可能です。現在 {len(selected_codes)} 件選択されています。")
-            elif len(selected_codes) == 0:
-                st.warning("1件以上選択してください。")
-            else:
-                conn = get_connection()
-                c = conn.cursor()
-                now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-                for code in selected_codes:
-                    c.execute(
-                        "INSERT INTO vote (vote_date, stock_code, created_at) VALUES (?, ?, ?)",
-                        (selected_date_str, code, now)
-                    )
-                conn.commit()
-                conn.close()
-                st.success("投票が保存されました。")
-    else:
-        st.write("対象日のデータはまだありません。")
-
-# ======================
-# ページ：投票結果確認
-# ======================
-def vote_page():
-    st.title("③ 投票結果確認")
-    st.write(f"【対象日】{selected_date_str}")
-    
-    # voteテーブルから、対象日の各銘柄の投票数を集計（多い順）
-    conn = get_connection()
-    c = conn.cursor()
-    c.execute(
-        "SELECT stock_code, COUNT(*) as vote_count FROM vote WHERE vote_date = ? GROUP BY stock_code ORDER BY vote_count DESC",
-        (selected_date_str,)
-    )
-    results = c.fetchall()
-    conn.close()
-    
-    if results:
-        # Exportボタンを【対象日】の直後に移動
-        codes = [row[0] for row in results]
-        file_content = "\n".join(codes)
-        filename = selected_date.strftime("%Y%m%d") + "投票結果.txt"
-        st.download_button("銘柄コードExport", data=file_content, file_name=filename, mime="text/plain")
-        st.markdown("---")
-
-        # ワードクラウド用の辞書を作成（銘柄コードを単語、投票数を頻度として利用）
-        vote_dict = {row[0]: row[1] for row in results}
-        try:
-            from wordcloud import WordCloud
-            import matplotlib.pyplot as plt
-            # ワードクラウドの生成
-            wc = WordCloud(width=800, height=400, background_color='white').generate_from_frequencies(vote_dict)
-            plt.figure(figsize=(10, 5))
-            plt.imshow(wc, interpolation='bilinear')
-            plt.axis("off")
-            st.pyplot(plt)
-        except ImportError:
-            st.error("wordcloudおよびmatplotlibライブラリが必要です。'pip install wordcloud matplotlib'でインストールしてください。")
-        st.markdown("---")
-        st.write("投票結果")
-        header_cols = st.columns([1, 2, 1])
-        header_cols[0].write("銘柄コード")
-        header_cols[1].write("銘柄名")
-        header_cols[2].write("投票数")
-        for row in results:
-            stock_code, vote_count = row
-            url = f"https://www.tradingview.com/chart/?symbol={stock_code}"
-            stock_name_link = f'<a href="{url}" target="_blank" rel="noopener noreferrer">{stock_code}</a>'
-            cols = st.columns([1, 2, 1])
-            cols[0].write(stock_code)
-            cols[1].markdown(stock_name_link, unsafe_allow_html=True)
-            cols[2].write(vote_count)
-        
-    else:
-        st.write("対象日の投票結果はまだありません。")
-
-# ======================
-# ページ切り替え
-# ======================
-if page == "① 銘柄コード登録":
-    survey_page()
-elif page == "② 銘柄投票":
-    aggregation_page()
-elif page == "③ 投票結果確認":
-    vote_page()
+# ページの表示
+if page == 'survey':
+    survey.show(selected_date)
+elif page == 'vote':
+    vote.show(selected_date)
+elif page == 'result':
+    result.show(selected_date)
+else:
+    top.show(selected_date)
