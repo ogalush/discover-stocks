@@ -1,5 +1,7 @@
 import streamlit as st
 from utils.db import get_connection
+import csv
+from io import StringIO
 
 def show(selected_date):
     selected_date_str = selected_date.strftime("%Y-%m-%d")
@@ -18,11 +20,28 @@ def show(selected_date):
     conn.close()
     
     if results:
-        # Exportボタン
+        # テキストファイルExportボタン
         codes = [row[0] for row in results]
         file_content = "\n".join(codes)
         filename = selected_date.strftime("%Y%m%d") + "投票結果.txt"
         st.download_button("銘柄コードExport", data=file_content, file_name=filename, mime="text/plain")
+        
+        # CSVファイルExportボタン
+        csv_buffer = StringIO()
+        csv_writer = csv.writer(csv_buffer)
+        csv_writer.writerow(['code', 'Number of votes', 'TradingView URL'])  # ヘッダー行
+        # データ行にTradingView URLを追加
+        csv_data = [(row[0], row[1], f'https://www.tradingview.com/chart/?symbol={row[0]}') for row in results]
+        csv_writer.writerows(csv_data)
+        
+        csv_filename = selected_date.strftime("%Y%m%d") + "投票結果.csv"
+        st.download_button(
+            "投票結果CSV Export",
+            data=csv_buffer.getvalue(),
+            file_name=csv_filename,
+            mime="text/csv"
+        )
+        
         st.markdown("---")
 
         # ワードクラウドの表示

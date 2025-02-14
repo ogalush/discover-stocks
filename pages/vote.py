@@ -2,6 +2,8 @@ import streamlit as st
 from datetime import datetime
 from utils.db import get_connection
 from utils.common import MAX_VOTE_SELECTION
+import csv
+from io import StringIO
 
 def show(selected_date):
     selected_date_str = selected_date.strftime("%Y-%m-%d")
@@ -27,11 +29,27 @@ def show(selected_date):
         else:
             sorted_results = sorted(results, key=lambda x: x[1], reverse=True)
         
-        # Exportボタン
+        # テキストファイルExportボタン
         codes = [row[0] for row in sorted_results]
         file_content = "\n".join(codes)
         filename = selected_date.strftime("%Y%m%d") + "銘柄発掘.txt"
         st.download_button("銘柄コードExport", data=file_content, file_name=filename, mime="text/plain")
+        
+        # CSVファイルExportボタン
+        csv_buffer = StringIO()
+        csv_writer = csv.writer(csv_buffer)
+        csv_writer.writerow(['code', 'Number of survey votes', 'TradingView URL'])  # ヘッダー行
+        # データ行にTradingView URLを追加
+        csv_data = [(row[0], row[1], f'https://www.tradingview.com/chart/?symbol={row[0]}') for row in sorted_results]
+        csv_writer.writerows(csv_data)
+        
+        csv_filename = selected_date.strftime("%Y%m%d") + "集計結果.csv"
+        st.download_button(
+            "集計結果CSV Export",
+            data=csv_buffer.getvalue(),
+            file_name=csv_filename,
+            mime="text/csv"
+        )
         
         # 投票方法の説明
         st.info("""
