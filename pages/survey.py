@@ -9,6 +9,17 @@ def show(selected_date):
     
     st.title("銘柄コード登録")
     st.write(f"【対象日】{selected_date_str}")
+    
+    # 入力方法の説明を追加
+    st.info("""
+    【銘柄コード入力方法】
+    1. 銘柄コードを入力（半角英数字・大文字のみ）
+    2. 「確定」ボタンをクリックして入力内容を確認
+    3. 銘柄名のリンクをクリックすると、TradingViewでチャートを確認できます
+    4. 全ての入力が完了したら下部の「送信」ボタンを押してください
+    """)
+    st.markdown("---")
+    
     st.write("以下の入力欄に、半角英数字・大文字のみの銘柄コードを入力してください。")
     
     # 各入力セットを1行として作成
@@ -38,7 +49,7 @@ def show(selected_date):
     st.markdown("---")
     if st.button("送信"):
         save_survey_data(selected_date_str)
-        st.success("入力内容をデータベースに保存しました。")
+        st.success("入力した銘柄コードを登録しました。")
 
 def save_survey_data(selected_date_str):
     conn = get_connection()
