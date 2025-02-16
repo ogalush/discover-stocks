@@ -39,6 +39,16 @@ def init_db():
         """
     )
     
+    # 銘柄マスタテーブルを追加
+    c.execute(
+        """
+        CREATE TABLE IF NOT EXISTS stock_master (
+            stock_code TEXT PRIMARY KEY,
+            stock_name TEXT NOT NULL
+        )
+        """
+    )
+    
     conn.commit()
     conn.close()
     
