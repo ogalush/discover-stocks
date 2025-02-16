@@ -59,18 +59,20 @@ def show(selected_date):
         
         st.markdown("---")
         st.write("投票結果")
-        header_cols = st.columns([1, 2, 1])
-        header_cols[0].write("銘柄コード")
-        header_cols[1].write("銘柄名")
-        header_cols[2].write("投票数")
+        header_cols = st.columns([0.5, 1, 2, 1])  # カラム幅を調整
+        header_cols[0].write("No.")
+        header_cols[1].write("銘柄コード")
+        header_cols[2].write("銘柄名")
+        header_cols[3].write("投票数")
         
-        for row in results:
+        for index, row in enumerate(results, 1):  # enumerate関数で順番を付与
             stock_code, vote_count = row
             url = f"https://www.tradingview.com/chart/?symbol={stock_code}"
             stock_name_link = f'<a href="{url}" target="_blank" rel="noopener noreferrer">{stock_code}</a>'
-            cols = st.columns([1, 2, 1])
-            cols[0].write(stock_code)
-            cols[1].markdown(stock_name_link, unsafe_allow_html=True)
-            cols[2].write(vote_count)
+            cols = st.columns([0.5, 1, 2, 1])  # カラム幅を調整
+            cols[0].write(f"{index}")  # 順位を表示
+            cols[1].write(stock_code)
+            cols[2].markdown(stock_name_link, unsafe_allow_html=True)
+            cols[3].write(vote_count)
     else:
         st.write("対象日の投票結果はまだありません。") 

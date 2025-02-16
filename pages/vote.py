@@ -63,19 +63,21 @@ def show(selected_date):
         st.write("最新の集計結果（投票前のアンケート集計）")
         
         # 表形式で表示
-        header_cols = st.columns([1, 1, 1])
-        header_cols[0].write("銘柄コード投票")
-        header_cols[1].write("銘柄名")
-        header_cols[2].write("アンケート票数")
+        header_cols = st.columns([0.5, 1, 1, 1])  # カラム幅を調整
+        header_cols[0].write("No.")
+        header_cols[1].write("銘柄コード投票")
+        header_cols[2].write("銘柄名")
+        header_cols[3].write("アンケート票数")
         
-        for row in sorted_results:
+        for index, row in enumerate(sorted_results, 1):  # enumerate関数で順番を付与
             stock_code, survey_count = row
             url = f"https://www.tradingview.com/chart/?symbol={stock_code}"
             stock_name_link = f'<a href="{url}" target="_blank" rel="noopener noreferrer">{stock_code}</a>'
-            cols = st.columns([1, 1, 1])
-            cols[0].checkbox(stock_code, key=f"checkbox_{stock_code}")
-            cols[1].markdown(stock_name_link, unsafe_allow_html=True)
-            cols[2].write(survey_count)
+            cols = st.columns([0.5, 1, 1, 1])  # カラム幅を調整
+            cols[0].write(f"{index}")  # 順位を表示
+            cols[1].checkbox(stock_code, key=f"checkbox_{stock_code}")
+            cols[2].markdown(stock_name_link, unsafe_allow_html=True)
+            cols[3].write(survey_count)
         
         st.markdown("---")
         if st.button("投票"):
