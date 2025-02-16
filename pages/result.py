@@ -2,6 +2,8 @@ import streamlit as st
 from utils.db import get_connection
 import csv
 from io import StringIO
+import pandas as pd
+from io import BytesIO
 
 def show(selected_date):
     selected_date_str = selected_date.strftime("%Y-%m-%d")
@@ -54,6 +56,46 @@ def show(selected_date):
             data=csv_bytes,
             file_name=csv_filename,
             mime="text/csv"
+        )
+        
+        # Excelファイルのエクスポート
+        excel_filename = selected_date.strftime("%Y%m%d") + "投票結果.xlsx"
+        
+        # DataFrameを作成（URLなし）
+        excel_data = [(row[0], row[1], row[2] or row[0]) for row in results]
+        df = pd.DataFrame(excel_data, columns=['銘柄コード', '投票数', '銘柄名'])
+        
+        # Excelファイルを作成
+        excel_buffer = BytesIO()
+        with pd.ExcelWriter(excel_buffer, engine='openpyxl') as writer:
+            df.to_excel(writer, index=False, sheet_name='投票結果')
+            
+            # ワークシートの取得
+            worksheet = writer.sheets['投票結果']
+            
+            # 列幅の自動調整
+            for idx, col in enumerate(df.columns):
+                max_length = max(
+                    df[col].astype(str).apply(len).max(),
+                    len(str(col))
+                )
+                worksheet.column_dimensions[chr(65 + idx)].width = max_length + 2
+            
+            # 銘柄名列にハイパーリンクを設定
+            for row_idx, row in enumerate(results, start=2):  # start=2 はヘッダー行の後から
+                stock_code = row[0]
+                url = f'https://www.tradingview.com/chart/?symbol={stock_code}'
+                cell = worksheet.cell(row=row_idx, column=3)  # 3列目（銘柄名）
+                cell.hyperlink = url
+                cell.style = 'Hyperlink'
+        
+        excel_data = excel_buffer.getvalue()
+        
+        st.download_button(
+            "投票結果Excel Export",
+            data=excel_data,
+            file_name=excel_filename,
+            mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
         )
         
         st.markdown("---")
