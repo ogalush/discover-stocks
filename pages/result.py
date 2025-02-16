@@ -13,7 +13,14 @@ def show(selected_date):
     conn = get_connection()
     c = conn.cursor()
     c.execute(
-        "SELECT stock_code, COUNT(*) as vote_count FROM vote WHERE vote_date = ? GROUP BY stock_code ORDER BY vote_count DESC",
+        """
+        SELECT v.stock_code, COUNT(*) as vote_count, m.stock_name
+        FROM vote v
+        LEFT JOIN stock_master m ON v.stock_code = m.stock_code
+        WHERE v.vote_date = ?
+        GROUP BY v.stock_code
+        ORDER BY vote_count DESC
+        """,
         (selected_date_str,)
     )
     results = c.fetchall()
@@ -29,9 +36,8 @@ def show(selected_date):
         # CSVファイルExportボタン
         csv_buffer = StringIO()
         csv_writer = csv.writer(csv_buffer)
-        csv_writer.writerow(['code', 'Number of votes', 'TradingView URL'])  # ヘッダー行
-        # データ行にTradingView URLを追加
-        csv_data = [(row[0], row[1], f'https://www.tradingview.com/chart/?symbol={row[0]}') for row in results]
+        csv_writer.writerow(['code', 'Number of votes', 'Stock Name', 'TradingView URL'])
+        csv_data = [(row[0], row[1], row[2] or row[0], f'https://www.tradingview.com/chart/?symbol={row[0]}') for row in results]
         csv_writer.writerows(csv_data)
         
         csv_filename = selected_date.strftime("%Y%m%d") + "投票結果.csv"
@@ -59,18 +65,20 @@ def show(selected_date):
         
         st.markdown("---")
         st.write("投票結果")
-        header_cols = st.columns([0.5, 1, 2, 1])  # カラム幅を調整
+        header_cols = st.columns([0.5, 1, 2, 1])
         header_cols[0].write("No.")
         header_cols[1].write("銘柄コード")
         header_cols[2].write("銘柄名")
         header_cols[3].write("投票数")
         
-        for index, row in enumerate(results, 1):  # enumerate関数で順番を付与
-            stock_code, vote_count = row
+        for index, row in enumerate(results, 1):
+            stock_code, vote_count, stock_name = row
+            display_name = stock_name or stock_code  # stock_nameがNoneの場合はstock_codeを使用
             url = f"https://www.tradingview.com/chart/?symbol={stock_code}"
-            stock_name_link = f'<a href="{url}" target="_blank" rel="noopener noreferrer">{stock_code}</a>'
-            cols = st.columns([0.5, 1, 2, 1])  # カラム幅を調整
-            cols[0].write(f"{index}")  # 順位を表示
+            stock_name_link = f'<a href="{url}" target="_blank" rel="noopener noreferrer">{display_name}</a>'
+            
+            cols = st.columns([0.5, 1, 2, 1])
+            cols[0].write(f"{index}")
             cols[1].write(stock_code)
             cols[2].markdown(stock_name_link, unsafe_allow_html=True)
             cols[3].write(vote_count)
