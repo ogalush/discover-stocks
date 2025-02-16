@@ -44,14 +44,22 @@ def show(selected_date):
         # CSVファイルExportボタン
         csv_buffer = StringIO()
         csv_writer = csv.writer(csv_buffer)
-        csv_writer.writerow(['code', 'Number of survey votes', 'Stock Name', 'TradingView URL'])
+        # ヘッダー行をSJISで書き込み
+        headers = ['銘柄コード', 'アンケート票数', '銘柄名', 'TradingView URL']
         csv_data = [(row[0], row[1], row[2] or row[0], f'https://www.tradingview.com/chart/?symbol={row[0]}') for row in sorted_results]
-        csv_writer.writerows(csv_data)
+        
+        # SJISでエンコードしたバイトデータを作成
+        output = StringIO()
+        writer = csv.writer(output)
+        writer.writerow(headers)
+        writer.writerows(csv_data)
+        csv_str = output.getvalue()
+        csv_bytes = csv_str.encode('shift-jis', errors='replace')
         
         csv_filename = selected_date.strftime("%Y%m%d") + "集計結果.csv"
         st.download_button(
             "集計結果CSV Export",
-            data=csv_buffer.getvalue(),
+            data=csv_bytes,
             file_name=csv_filename,
             mime="text/csv"
         )
