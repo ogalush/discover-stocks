@@ -105,11 +105,22 @@ def show(selected_date):
         try:
             from wordcloud import WordCloud
             import matplotlib.pyplot as plt
-            wc = WordCloud(width=800, height=400, background_color='white').generate_from_frequencies(vote_dict)
-            plt.figure(figsize=(10, 5))
-            plt.imshow(wc, interpolation='bilinear')
-            plt.axis("off")
-            st.pyplot(plt)
+            
+            # 投票結果をキャッシュキーとして使用
+            @st.cache_data(ttl=None)  # TTLなし（投票結果が変わるまでキャッシュ有効）
+            def generate_wordcloud(vote_data_str, date_str):
+                vote_dict = eval(vote_data_str)  # 文字列から辞書に戻す
+                wc = WordCloud(width=800, height=400, background_color='white').generate_from_frequencies(vote_dict)
+                fig = plt.figure(figsize=(10, 5))
+                plt.imshow(wc, interpolation='bilinear')
+                plt.axis("off")
+                return fig
+            
+            # 投票データを文字列化してキャッシュキーとして使用
+            vote_data_str = str(vote_dict)
+            fig = generate_wordcloud(vote_data_str, selected_date_str)
+            st.pyplot(fig)
+            
         except ImportError:
             st.error("wordcloudおよびmatplotlibライブラリが必要です。'pip install wordcloud matplotlib'でインストールしてください。")
         
