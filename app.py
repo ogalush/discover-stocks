@@ -2,7 +2,6 @@ import streamlit as st
 from utils.db import init_db
 from utils.common import get_date_from_params
 from pages import top, survey, vote, result, stock_master
-from datetime import date
 
 # DB初期化
 init_db()
