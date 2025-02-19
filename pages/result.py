@@ -32,7 +32,7 @@ def show(selected_date):
         # テキストファイルExportボタン
         codes = [row[0] for row in results]
         file_content = "\n".join(codes)
-        filename = selected_date.strftime("%Y%m%d") + "投票結果.txt"
+        filename = f"投票結果{selected_date.strftime('%Y%m%d')}.txt"
         st.download_button("銘柄コードExport", data=file_content, file_name=filename, mime="text/plain")
         
         # CSVファイルExportボタン
@@ -50,7 +50,7 @@ def show(selected_date):
         csv_str = output.getvalue()
         csv_bytes = csv_str.encode('shift-jis', errors='replace')
         
-        csv_filename = selected_date.strftime("%Y%m%d") + "投票結果.csv"
+        csv_filename = f"投票結果{selected_date.strftime('%Y%m%d')}.csv"
         st.download_button(
             "投票結果CSV Export",
             data=csv_bytes,
@@ -59,7 +59,7 @@ def show(selected_date):
         )
         
         # Excelファイルのエクスポート
-        excel_filename = selected_date.strftime("%Y%m%d") + "投票結果.xlsx"
+        excel_filename = f"投票結果{selected_date.strftime('%Y%m%d')}.xlsx"
         
         # DataFrameを作成（URLなし）
         excel_data = [(row[0], row[1], row[2] or row[0]) for row in results]

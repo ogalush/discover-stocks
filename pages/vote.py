@@ -42,7 +42,7 @@ def show(selected_date):
         # テキストファイルExportボタン
         codes = [row[0] for row in sorted_results]
         file_content = "\n".join(codes)
-        filename = selected_date.strftime("%Y%m%d") + f"銘柄発掘{sort_suffix}.txt"
+        filename = f"銘柄発掘{selected_date.strftime('%Y%m%d')}{sort_suffix}.txt"
         st.download_button("銘柄コードExport", data=file_content, file_name=filename, mime="text/plain")
         
         # CSVファイルExportボタン
@@ -60,7 +60,7 @@ def show(selected_date):
         csv_str = output.getvalue()
         csv_bytes = csv_str.encode('shift-jis', errors='replace')
         
-        csv_filename = selected_date.strftime("%Y%m%d") + f"集計結果{sort_suffix}.csv"
+        csv_filename = f"銘柄発掘{selected_date.strftime('%Y%m%d')}{sort_suffix}.csv"
         st.download_button(
             "集計結果CSV Export",
             data=csv_bytes,
@@ -69,7 +69,7 @@ def show(selected_date):
         )
         
         # Excelファイルのエクスポート
-        excel_filename = selected_date.strftime("%Y%m%d") + f"集計結果{sort_suffix}.xlsx"
+        excel_filename = f"銘柄発掘{selected_date.strftime('%Y%m%d')}{sort_suffix}.xlsx"
         
         # DataFrameを作成（URLなし）
         excel_data = [(row[0], row[1], row[2] or row[0]) for row in sorted_results]
