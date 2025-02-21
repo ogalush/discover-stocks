@@ -139,8 +139,17 @@ def show(selected_date):
             cols[3].write(survey_count)
         
         st.markdown("---")
-        if st.button("投票"):
-            save_vote_data(selected_date_str, sorted_results)
+        # 投票ボタンの状態管理
+        if 'vote_submitted' not in st.session_state:
+            st.session_state.vote_submitted = False
+        
+        if not st.session_state.vote_submitted:
+            if st.button("投票"):
+                st.session_state.vote_submitted = True  # ボタンがクリックされたことを記録
+                with st.spinner("投票を保存中..."):
+                    save_vote_data(selected_date_str, sorted_results)
+        else:
+            st.info("投票は完了しています。")
     else:
         st.write("対象日のデータはまだありません。")
 
@@ -153,17 +162,31 @@ def save_vote_data(selected_date_str, results):
     
     if len(selected_codes) > MAX_VOTE_SELECTION:
         st.error(f"投票は最大{MAX_VOTE_SELECTION}件まで選択可能です。現在 {len(selected_codes)} 件選択されています。")
+        st.session_state.vote_submitted = False  # エラー時は再投票可能に
     elif len(selected_codes) == 0:
         st.warning("1件以上選択してください。")
+        st.session_state.vote_submitted = False  # エラー時は再投票可能に
     else:
+        # 進捗バーを表示
+        progress_text = "投票データを保存中..."
+        progress_bar = st.progress(0)
+        
         conn = get_connection()
         c = conn.cursor()
         now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-        for code in selected_codes:
+        
+        for i, code in enumerate(selected_codes):
             c.execute(
                 "INSERT INTO vote (vote_date, stock_code, created_at) VALUES (?, ?, ?)",
                 (selected_date_str, code, now)
             )
+            # 進捗バーを更新
+            progress = (i + 1) / len(selected_codes)
+            progress_bar.progress(progress)
+        
         conn.commit()
         conn.close()
+        
+        # 進捗バーを完了状態に
+        progress_bar.progress(1.0)
         st.success("投票が保存されました。") 
