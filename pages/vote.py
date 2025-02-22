@@ -189,4 +189,5 @@ def save_vote_data(selected_date_str, results):
         
         # 進捗バーを完了状態に
         progress_bar.progress(1.0)
-        st.success("投票が保存されました。") 
+        st.success("投票が保存されました。")
+        st.balloons()
