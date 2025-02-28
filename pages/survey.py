@@ -13,14 +13,14 @@ def show(selected_date):
     # 入力方法の説明を追加
     st.info("""
     【銘柄コード入力方法】
-    1. 銘柄コードを入力（半角英数字・大文字のみ）
+    1. 銘柄コードを入力（半角英数字・大文字とピリオドのみ）
     2. 「確定」ボタンをクリックして入力内容を確認
     3. 銘柄名のリンクをクリックすると、TradingViewでチャートを確認できます
     4. 全ての入力が完了したら下部の「送信」ボタンを押してください
     """)
     st.markdown("---")
     
-    st.write("以下の入力欄に、半角英数字・大文字のみの銘柄コードを入力してください。")
+    st.write("以下の入力欄に、半角英数字・大文字とピリオドのみの銘柄コードを入力してください。")
     
     # 各入力セットを1行として作成
     for i in range(MAX_SETS):
@@ -29,11 +29,11 @@ def show(selected_date):
             inner_cols = st.columns([3, 1])
             code_input = inner_cols[0].text_input(f"銘柄コード {i+1}", key=f"code_{i}")
             if inner_cols[1].button("確定", key=f"confirm_button_{i}"):
-                if re.match(r'^[A-Z0-9]+$', code_input):
+                if re.match(r'^[A-Z0-9.]+$', code_input):
                     st.session_state[f"confirmed_{i}"] = code_input
                     st.success(f"銘柄コード {code_input} を確定しました。")
                 else:
-                    st.error("入力が不正です。半角英数字・大文字のみを使用してください。")
+                    st.error("入力が不正です。半角英数字・大文字とピリオドのみを使用してください。")
         
         with row[1]:
             if f"confirmed_{i}" in st.session_state:
