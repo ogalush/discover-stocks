@@ -4,5 +4,3 @@ matplotlib
 pandas
 openpyxl
 plotly
-datetime
-re

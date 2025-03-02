@@ -11,8 +11,8 @@ def show(selected_date):
 
     # REGEXPを使うための関数を定義
     def regexp(pattern, string):
-      return bool(re.match(pattern, string))
-    
+        return bool(re.match(pattern, string))
+
     # voteテーブルから、各投票回の投票数を取得する
     conn = get_connection()
 
@@ -100,7 +100,7 @@ def show(selected_date):
                 )
 
                 return fig
-            
+
             # 投票データを文字列化してキャッシュキーとして使用
             vote_data_str = str(results_jp + results_us)
 
@@ -112,9 +112,8 @@ def show(selected_date):
             fig = generate_votegraph('米国株', results_us)
             st.plotly_chart(fig)
 
-            
         except ImportError:
-            st.error("matplotlib, pandas, pandas, datetime ライブラリが必要です。'pip3 install matplotlib, pandas, pandas, datetime'でインストールしてください。")
+            st.error("matplotlib, plotly, pandas ライブラリが必要です。'pip3 install matplotlib, plotly, pandas'でインストールしてください。")
 
     else:
         st.write("対象日の投票結果はまだありません。") 
