@@ -3,3 +3,4 @@ wordcloud
 matplotlib
 pandas
 openpyxl
+plotly
