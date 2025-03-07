@@ -11,7 +11,7 @@ def show(selected_date):
     st.markdown("---")
     st.subheader("各ページへのリンク")
     
-    col1, col2, col3 = st.columns(3)
+    col1, col2, col3, col4 = st.columns(4)
     
     with col1:
         st.markdown(f'<a href="./?page=survey&date={date_str}" target="_self">銘柄コード登録</a>', unsafe_allow_html=True)
@@ -24,3 +24,7 @@ def show(selected_date):
     with col3:
         st.markdown(f'<a href="./?page=result&date={date_str}" target="_self">投票結果確認</a>', unsafe_allow_html=True)
         st.write("投票結果を確認します") 
+
+    with col4:
+        st.markdown(f'<a href="./?page=result_graph&date={date_str}" target="_self">投票結果の推移</a>', unsafe_allow_html=True)
+        st.write("投票結果の推移を確認します") 
