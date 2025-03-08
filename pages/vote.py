@@ -1,7 +1,7 @@
 import streamlit as st
 from datetime import datetime
 from utils.db import get_connection
-from utils.common import MAX_VOTE_SELECTION
+from utils.common import MAX_VOTE_SELECTION, format_vote_data_with_thresh
 import csv
 from io import StringIO
 import pandas as pd
@@ -35,16 +35,26 @@ def show(selected_date):
         if sort_option == "銘柄コード 昇順":
             sorted_results = sorted(results, key=lambda x: x[0])
             sort_suffix = "_コード順"
+            sorted_results_with_thresh = None
         else:
             sorted_results = sorted(results, key=lambda x: x[1], reverse=True)
             sort_suffix = "_票数順"
+            sorted_results_with_thresh = format_vote_data_with_thresh(results)
         
+        row1_col1, row1_col2 = st.columns(2)
         # テキストファイルExportボタン
         codes = [row[0] for row in sorted_results]
         file_content = "\n".join(codes)
         filename = f"銘柄発掘{selected_date.strftime('%Y%m%d')}{sort_suffix}.txt"
-        st.download_button("銘柄コードExport", data=file_content, file_name=filename, mime="text/plain")
+        with row1_col1:
+            st.download_button("銘柄コードExport", data=file_content, file_name=filename, mime="text/plain")
+
+        if sorted_results_with_thresh:
+            with row1_col2:
+                filename = f"銘柄発掘{selected_date.strftime('%Y%m%d')}{sort_suffix}_票数付.txt"
+                st.download_button("銘柄コードExport(票数付)", data=sorted_results_with_thresh, file_name=filename, mime="text/plain")
         
+        row2_col1, row2_col2 = st.columns(2)
         # CSVファイルExportボタン
         csv_buffer = StringIO()
         csv_writer = csv.writer(csv_buffer)
@@ -61,12 +71,13 @@ def show(selected_date):
         csv_bytes = csv_str.encode('shift-jis', errors='replace')
         
         csv_filename = f"銘柄発掘{selected_date.strftime('%Y%m%d')}{sort_suffix}.csv"
-        st.download_button(
-            "集計結果CSV Export",
-            data=csv_bytes,
-            file_name=csv_filename,
-            mime="text/csv"
-        )
+        with row2_col1:
+            st.download_button(
+                "集計結果CSV Export",
+                data=csv_bytes,
+                file_name=csv_filename,
+                mime="text/csv"
+            )
         
         # Excelファイルのエクスポート
         excel_filename = f"銘柄発掘{selected_date.strftime('%Y%m%d')}{sort_suffix}.xlsx"
@@ -100,13 +111,13 @@ def show(selected_date):
                 cell.style = 'Hyperlink'
         
         excel_data = excel_buffer.getvalue()
-        
-        st.download_button(
-            "集計結果Excel Export",
-            data=excel_data,
-            file_name=excel_filename,
-            mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-        )
+        with row2_col2:
+            st.download_button(
+                "集計結果Excel Export",
+                data=excel_data,
+                file_name=excel_filename,
+                mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+            )
         
         # 投票方法の説明
         st.info("""

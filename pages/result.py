@@ -1,4 +1,5 @@
 import streamlit as st
+from utils.common import format_vote_data_with_thresh
 from utils.db import get_connection
 import csv
 from io import StringIO
@@ -29,12 +30,21 @@ def show(selected_date):
     conn.close()
     
     if results:
+        row1_col1, row1_col2 = st.columns(2)
         # テキストファイルExportボタン
         codes = [row[0] for row in results]
         file_content = "\n".join(codes)
         filename = f"投票結果{selected_date.strftime('%Y%m%d')}.txt"
-        st.download_button("銘柄コードExport", data=file_content, file_name=filename, mime="text/plain")
+        with row1_col1:
+            st.download_button("銘柄コードExport", data=file_content, file_name=filename, mime="text/plain")
+
+        sorted_results_with_thresh = format_vote_data_with_thresh(results)
+        if sorted_results_with_thresh:
+            filename = f"投票結果{selected_date.strftime('%Y%m%d')}_票数付.txt"
+            with row1_col2:
+                st.download_button("銘柄コードExport(票数付)", data=sorted_results_with_thresh, file_name=filename, mime="text/plain")
         
+        row2_col1, row2_col2 = st.columns(2)
         # CSVファイルExportボタン
         csv_buffer = StringIO()
         csv_writer = csv.writer(csv_buffer)
@@ -51,12 +61,13 @@ def show(selected_date):
         csv_bytes = csv_str.encode('shift-jis', errors='replace')
         
         csv_filename = f"投票結果{selected_date.strftime('%Y%m%d')}.csv"
-        st.download_button(
-            "投票結果CSV Export",
-            data=csv_bytes,
-            file_name=csv_filename,
-            mime="text/csv"
-        )
+        with row2_col1:
+            st.download_button(
+                "投票結果CSV Export",
+                data=csv_bytes,
+                file_name=csv_filename,
+                mime="text/csv"
+            )
         
         # Excelファイルのエクスポート
         excel_filename = f"投票結果{selected_date.strftime('%Y%m%d')}.xlsx"
@@ -90,13 +101,13 @@ def show(selected_date):
                 cell.style = 'Hyperlink'
         
         excel_data = excel_buffer.getvalue()
-        
-        st.download_button(
-            "投票結果Excel Export",
-            data=excel_data,
-            file_name=excel_filename,
-            mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-        )
+        with row2_col2:
+            st.download_button(
+                "投票結果Excel Export",
+                data=excel_data,
+                file_name=excel_filename,
+                mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+            )
         
         st.markdown("---")
 
