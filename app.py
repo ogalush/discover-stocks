@@ -1,10 +1,22 @@
 import streamlit as st
+import threading
 from utils.db import init_db
 from utils.common import get_date_from_params
 from pages import top, survey, vote, result, result_graph, stock_master, db_management
 
-# DB初期化
-init_db()
+# DB 初期化をバックグラウンドで実行
+def init_db_async():
+    init_db()
+    st.session_state["db_initialized"] = True
+
+if "db_initialized" not in st.session_state:
+    st.session_state["db_initialized"] = False
+    thread = threading.Thread(target=init_db_async, daemon=True)
+    thread.start()
+
+# 初期化が終わったら再実行
+if st.session_state["db_initialized"]:
+    st.rerun()
 
 # URLパラメータから対象ページとdateを取得
 query_params = st.query_params

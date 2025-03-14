@@ -14,7 +14,9 @@ def init_db():
     """
     conn = get_connection()
     c = conn.cursor()
-    
+
+    c.execute("BEGIN TRANSACTION")
+
     # 銘柄発掘アンケートの回答保存テーブル
     c.execute(
         """
