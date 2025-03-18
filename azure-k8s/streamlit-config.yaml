@@ -1,0 +1,12 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: streamlit-config
+  namespace: discover-stocks-test  # 作成した名前空間を指定
+data:
+  config.toml: |
+    [server]
+    headless = true
+    enableCORS = false
+    enableXsrfProtection = false
+    port = 8501

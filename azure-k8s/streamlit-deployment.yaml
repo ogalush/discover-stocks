@@ -1,0 +1,43 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: streamlit-app
+  namespace: discover-stocks-test  # 作成した名前空間を指定
+spec:
+  replicas: 3 # PodのReplica数
+  selector:
+    matchLabels:
+      app: streamlit
+  template:
+    metadata:
+      labels:
+        app: streamlit
+    spec:
+      containers:
+      - name: streamlit
+        image: discoverstockstest.azurecr.io/discover-stocks-test:v1 # CustomImage
+        ports:
+        - containerPort: 8501
+        env:
+        - name: STREAMLIT_SERVER_PORT
+          value: "8501"
+      imagePullSecrets:           # DockyerRegistryからのPull
+        - name: acr-secret
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: streamlit-service
+  namespace: discover-stocks-test  # 作成した名前空間を指定
+spec:
+  selector:
+    app: streamlit
+  type: LoadBalancer  # 外部アクセス用
+  ports:
+    - protocol: TCP
+      port: 80
+      targetPort: 8501
+  sessionAffinity: ClientIP ## アップロード時にセッションID無しでエラーになる対応(DBimport対応) https://github.com/streamlit/streamlit/issues/4173
+  sessionAffinityConfig:
+    clientIP:
+      timeoutSeconds: 3600
