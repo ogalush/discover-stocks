@@ -38,7 +38,7 @@ def show(selected_date):
         with row[1]:
             if f"confirmed_{i}" in st.session_state:
                 confirmed_code = st.session_state[f"confirmed_{i}"]
-                url = f"https://www.tradingview.com/chart/?symbol={confirmed_code}"
+                url = f"https://jp.tradingview.com/chart/?symbol={confirmed_code}"
                 st.markdown(
                     f'<a href="{url}" target="_blank" rel="noopener noreferrer">{confirmed_code}のチャートを表示する</a>',
                     unsafe_allow_html=True

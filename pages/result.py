@@ -50,7 +50,7 @@ def show(selected_date):
         csv_writer = csv.writer(csv_buffer)
         # ヘッダー行をSJISで書き込み
         headers = ['銘柄コード', '投票数', '銘柄名', 'TradingView URL']
-        csv_data = [(row[0], row[1], row[2] or row[0], f'https://www.tradingview.com/chart/?symbol={row[0]}') for row in results]
+        csv_data = [(row[0], row[1], row[2] or row[0], f'https://jp.tradingview.com/chart/?symbol={row[0]}') for row in results]
         
         # SJISでエンコードしたバイトデータを作成
         output = StringIO()
@@ -95,7 +95,7 @@ def show(selected_date):
             # 銘柄名列にハイパーリンクを設定
             for row_idx, row in enumerate(results, start=2):  # start=2 はヘッダー行の後から
                 stock_code = row[0]
-                url = f'https://www.tradingview.com/chart/?symbol={stock_code}'
+                url = f'https://jp.tradingview.com/chart/?symbol={stock_code}'
                 cell = worksheet.cell(row=row_idx, column=3)  # 3列目（銘柄名）
                 cell.hyperlink = url
                 cell.style = 'Hyperlink'
@@ -146,7 +146,7 @@ def show(selected_date):
         for index, row in enumerate(results, 1):
             stock_code, vote_count, stock_name = row
             display_name = stock_name or stock_code  # stock_nameがNoneの場合はstock_codeを使用
-            url = f"https://www.tradingview.com/chart/?symbol={stock_code}"
+            url = f"https://jp.tradingview.com/chart/?symbol={stock_code}"
             stock_name_link = f'<a href="{url}" target="_blank" rel="noopener noreferrer">{display_name}</a>'
             
             cols = st.columns([0.5, 1, 2, 1])
