@@ -1,8 +1,27 @@
 from datetime import datetime, date
+import yfinance as yf
+from utils.db import get_connection
 
 MAX_SETS = 7            # 銘柄発掘アンケートの入力セット数
 MAX_VOTE_SELECTION = 10 # 集計ページでのチェックボックスの最大選択数
 STOCKS_PER_PAGE = 100   # 銘柄マスタ一覧の1ページあたりの表示件数
+
+def get_ticker(stock_code):
+    """
+    銘柄コードからyfinance用のtickerを生成する関数
+
+    Parameters:
+    stock_code (str): 銘柄コード
+
+    Returns:
+    str: yfinance用のticker
+    """
+    # 先頭文字が数値の場合は日本株として扱う
+    if stock_code[0].isdigit():
+        return f"{stock_code}.T"
+    else:
+        # それ以外は米国株として扱う
+        return stock_code
 
 def get_date_from_params(query_params):
     if 'date' in query_params:
@@ -58,3 +77,38 @@ def format_vote_data_with_thresh(vote_data):
     result.extend(keys_below_min)
 
     return '\n'.join(result)
+
+def get_stock_name(stock_code):
+    """
+    銘柄コードから銘柄名を取得する関数
+    1. まずstock_masterテーブルから取得を試みる
+    2. 見つからない場合はyfinanceから取得する
+    3. それでも見つからない場合は銘柄コードを返す
+
+    Parameters:
+    stock_code (str): 銘柄コード
+
+    Returns:
+    str: 銘柄名
+    """
+    # データベースから銘柄名を取得
+    conn = get_connection()
+    cursor = conn.cursor()
+    cursor.execute("SELECT stock_name FROM stock_master WHERE stock_code = ?", (stock_code,))
+    result = cursor.fetchone()
+    conn.close()
+
+    if result:
+        return result[0]
+
+    # yfinanceから銘柄名を取得
+    try:
+        ticker = yf.Ticker(get_ticker(stock_code))
+        info = ticker.info
+        if 'shortName' in info:
+            return info['shortName']
+    except Exception:
+        pass
+
+    # どちらも見つからない場合は銘柄コードを返す
+    return stock_code
