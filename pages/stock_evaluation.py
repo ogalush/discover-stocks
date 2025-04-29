@@ -49,9 +49,50 @@ def get_stock_price(stock_code, start_date, end_date):
     except Exception as e:
         return None, None
 
-def create_treemap(df, title, currency_symbol):
+def create_treemap(df, title, currency_symbol, value_type='投票数'):
     """
     ヒートマップを作成する関数
+    
+    Parameters:
+    df (DataFrame): 表示するデータ
+    title (str): グラフのタイトル
+    currency_symbol (str): 通貨記号（円または$）
+    value_type (str): サイズの基準となる値の種類（'投票数'または'損益率'）
+    
+    Returns:
+    Figure: plotlyのFigureオブジェクト
+    """
+    df = df.copy()
+    df['表示ラベル'] = (df['銘柄名'] + '<br>銘柄コード: ' + df['銘柄コード'].astype(str) +
+                     '<br>投票数: ' + df['投票数'].astype(str) +
+                     '<br>損益率: ' + df['損益率(%)'].astype(str) + '%' +
+                     '<br>損益額: ' + df[f'損益額({currency_symbol})'].astype(str) + currency_symbol)
+    df['絶対損益率'] = df['損益率(%)'].abs()
+
+    # サイズの基準となる値を選択
+    if value_type == '損益率':
+        values = '絶対損益率'
+    else:
+        values = '投票数'
+    
+    fig = px.treemap(df,
+                    path=[px.Constant(title), '銘柄名'],
+                    values=values,
+                    color='損益率(%)',
+                    color_continuous_scale='RdBu',
+                    color_continuous_midpoint=0,
+                    custom_data=['表示ラベル'])
+
+    fig.update_traces(textinfo='text',
+                     text=df['表示ラベル'],
+                     hovertemplate='%{customdata[0]}')
+
+    fig.update_layout(margin=dict(t=50, l=25, r=25, b=25))
+    return fig
+
+def create_scatter(df, title, currency_symbol):
+    """
+    投票数と損益率の散布図を作成する関数
     
     Parameters:
     df (DataFrame): 表示するデータ
@@ -66,21 +107,23 @@ def create_treemap(df, title, currency_symbol):
                      '<br>投票数: ' + df['投票数'].astype(str) +
                      '<br>損益率: ' + df['損益率(%)'].astype(str) + '%' +
                      '<br>損益額: ' + df[f'損益額({currency_symbol})'].astype(str) + currency_symbol)
-    df['絶対損益率'] = df['損益率(%)'].abs()
-
-    fig = px.treemap(df,
-                    path=[px.Constant(title), '銘柄名'],
-                    values='投票数',
+    
+    fig = px.scatter(df,
+                    x='投票数',
+                    y='損益率(%)',
                     color='損益率(%)',
                     color_continuous_scale='RdBu',
                     color_continuous_midpoint=0,
+                    size='投票数',
+                    hover_name='銘柄名',
                     custom_data=['表示ラベル'])
-
-    fig.update_traces(textinfo='text',
-                     text=df['表示ラベル'],
-                     hovertemplate='%{customdata[0]}')
-
-    fig.update_layout(margin=dict(t=50, l=25, r=25, b=25))
+    
+    fig.update_traces(hovertemplate='%{customdata[0]}')
+    fig.update_layout(
+        xaxis_title='投票数',
+        yaxis_title='損益率(%)',
+        margin=dict(t=50, l=25, r=25, b=25)
+    )
     return fig
 
 def show(selected_date):
@@ -190,7 +233,18 @@ def show(selected_date):
             
             # 日本株のヒートマップ表示
             st.subheader("日本株 損益率ヒートマップ")
-            fig = create_treemap(st.session_state.japan_df, "日本株", "円")
+            value_type = st.radio(
+                "サイズの基準",
+                ["投票数", "損益率"],
+                key="japan_value_type",
+                horizontal=True
+            )
+            fig = create_treemap(st.session_state.japan_df, "日本株", "円", value_type)
+            st.plotly_chart(fig, use_container_width=True)
+            
+            # 日本株の散布図表示
+            st.subheader("日本株 投票数と損益率の関係")
+            fig = create_scatter(st.session_state.japan_df, "日本株", "円")
             st.plotly_chart(fig, use_container_width=True)
             
             # 日本株のCSVダウンロードボタン
@@ -211,7 +265,18 @@ def show(selected_date):
             
             # 米国株のヒートマップ表示
             st.subheader("米国株 損益率ヒートマップ")
-            fig = create_treemap(st.session_state.us_df, "米国株", "$")
+            value_type = st.radio(
+                "サイズの基準",
+                ["投票数", "損益率"],
+                key="us_value_type",
+                horizontal=True
+            )
+            fig = create_treemap(st.session_state.us_df, "米国株", "$", value_type)
+            st.plotly_chart(fig, use_container_width=True)
+            
+            # 米国株の散布図表示
+            st.subheader("米国株 投票数と損益率の関係")
+            fig = create_scatter(st.session_state.us_df, "米国株", "$")
             st.plotly_chart(fig, use_container_width=True)
             
             # 米国株のCSVダウンロードボタン
@@ -233,7 +298,18 @@ def show(selected_date):
             
             # 日本株のヒートマップ表示
             st.subheader("日本株 損益率ヒートマップ")
-            fig = create_treemap(st.session_state.japan_df, "日本株", "円")
+            value_type = st.radio(
+                "サイズの基準",
+                ["投票数", "損益率"],
+                key="japan_value_type",
+                horizontal=True
+            )
+            fig = create_treemap(st.session_state.japan_df, "日本株", "円", value_type)
+            st.plotly_chart(fig, use_container_width=True)
+            
+            # 日本株の散布図表示
+            st.subheader("日本株 投票数と損益率の関係")
+            fig = create_scatter(st.session_state.japan_df, "日本株", "円")
             st.plotly_chart(fig, use_container_width=True)
             
             japan_csv = st.session_state.japan_df.to_csv(index=False).encode('shift-jis', errors='replace')
@@ -250,7 +326,18 @@ def show(selected_date):
             
             # 米国株のヒートマップ表示
             st.subheader("米国株 損益率ヒートマップ")
-            fig = create_treemap(st.session_state.us_df, "米国株", "$")
+            value_type = st.radio(
+                "サイズの基準",
+                ["投票数", "損益率"],
+                key="us_value_type",
+                horizontal=True
+            )
+            fig = create_treemap(st.session_state.us_df, "米国株", "$", value_type)
+            st.plotly_chart(fig, use_container_width=True)
+            
+            # 米国株の散布図表示
+            st.subheader("米国株 投票数と損益率の関係")
+            fig = create_scatter(st.session_state.us_df, "米国株", "$")
             st.plotly_chart(fig, use_container_width=True)
             
             us_csv = st.session_state.us_df.to_csv(index=False).encode('shift-jis', errors='replace')
