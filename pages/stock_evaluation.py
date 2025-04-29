@@ -70,7 +70,7 @@ def create_treemap(df, title, currency_symbol):
 
     fig = px.treemap(df,
                     path=[px.Constant(title), '銘柄名'],
-                    values='絶対損益率',
+                    values='投票数',
                     color='損益率(%)',
                     color_continuous_scale='RdBu',
                     color_continuous_midpoint=0,
