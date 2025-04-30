@@ -83,7 +83,8 @@ def get_stock_name(stock_code):
     銘柄コードから銘柄名を取得する関数
     1. まずstock_masterテーブルから取得を試みる
     2. 見つからない場合はyfinanceから取得する
-    3. それでも見つからない場合は銘柄コードを返す
+    3. yfinanceから取得できた場合はstock_masterテーブルに登録する
+    4. それでも見つからない場合は銘柄コードを返す
 
     Parameters:
     stock_code (str): 銘柄コード
@@ -96,9 +97,9 @@ def get_stock_name(stock_code):
     cursor = conn.cursor()
     cursor.execute("SELECT stock_name FROM stock_master WHERE stock_code = ?", (stock_code,))
     result = cursor.fetchone()
-    conn.close()
-
+    
     if result:
+        conn.close()
         return result[0]
 
     # yfinanceから銘柄名を取得
@@ -106,9 +107,18 @@ def get_stock_name(stock_code):
         ticker = yf.Ticker(get_ticker(stock_code))
         info = ticker.info
         if 'shortName' in info:
-            return info['shortName']
+            stock_name = info['shortName']
+            # stock_masterテーブルに登録
+            cursor.execute(
+                "INSERT INTO stock_master (stock_code, stock_name) VALUES (?, ?)",
+                (stock_code, stock_name)
+            )
+            conn.commit()
+            conn.close()
+            return stock_name
     except Exception:
         pass
-
+    
+    conn.close()
     # どちらも見つからない場合は銘柄コードを返す
     return stock_code

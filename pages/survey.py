@@ -2,7 +2,7 @@ import streamlit as st
 import re
 from datetime import datetime
 from utils.db import get_connection
-from utils.common import MAX_SETS
+from utils.common import MAX_SETS, get_stock_name
 
 def show(selected_date):
     selected_date_str = selected_date.strftime("%Y-%m-%d")
@@ -31,16 +31,23 @@ def show(selected_date):
             if inner_cols[1].button("確定", key=f"confirm_button_{i}"):
                 if re.match(r'^[A-Z0-9.]+$', code_input):
                     st.session_state[f"confirmed_{i}"] = code_input
+                    # 銘柄名を取得
+                    stock_name = get_stock_name(code_input)
+                    st.session_state[f"stock_name_{i}"] = stock_name
                     st.success(f"銘柄コード {code_input} を確定しました。")
+                    # 銘柄名が銘柄コードと同じ場合は警告を表示
+                    if stock_name == code_input:
+                        st.warning("銘柄名が取得できませんでした。銘柄コードが正しいか確認してください。")
                 else:
                     st.error("入力が不正です。半角英数字・大文字とピリオドのみを使用してください。")
         
         with row[1]:
             if f"confirmed_{i}" in st.session_state:
                 confirmed_code = st.session_state[f"confirmed_{i}"]
+                stock_name = st.session_state.get(f"stock_name_{i}", confirmed_code)
                 url = f"https://jp.tradingview.com/chart/?symbol={confirmed_code}"
                 st.markdown(
-                    f'<a href="{url}" target="_blank" rel="noopener noreferrer">{confirmed_code}のチャートを表示する</a>',
+                    f'<a href="{url}" target="_blank" rel="noopener noreferrer">{stock_name}のチャートを表示する</a>',
                     unsafe_allow_html=True
                 )
             else:
