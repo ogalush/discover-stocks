@@ -15,6 +15,12 @@ def get_font_path():
     Returns:
     str: 日本語フォントのパス
     """
+    # アプリケーション内のフォントファイルのパスを取得
+    app_font_path = os.path.join(os.path.dirname(__file__), "..", "fonts", "NotoSansJP-Regular.otf")
+    if os.path.exists(app_font_path):
+        return app_font_path
+    
+    # バックアップとしてシステムフォントをチェック
     system = platform.system()
     if system == "Windows":
         return "C:/Windows/Fonts/msgothic.ttc"
@@ -31,19 +37,16 @@ def get_font_path():
         for path in possible_paths:
             if os.path.exists(path):
                 return path
-        return None
-    elif system == "Linux":
-        # Linux環境で一般的な日本語フォントのパス
-        possible_paths = [
+    else:  # Linux
+        system_font_paths = [
             "/usr/share/fonts/truetype/noto/NotoSansCJK-Regular.ttc",
             "/usr/share/fonts/truetype/noto/NotoSansJP-Regular.otf",
             "/usr/share/fonts/truetype/ipa/ipag.ttf",
             "/usr/share/fonts/truetype/ipa/ipagp.ttf"
         ]
-        for path in possible_paths:
+        for path in system_font_paths:
             if os.path.exists(path):
                 return path
-        return None
     return None
 
 def show(selected_date):
