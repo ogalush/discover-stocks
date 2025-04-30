@@ -5,6 +5,46 @@ import csv
 from io import StringIO
 import pandas as pd
 from io import BytesIO
+import platform
+import os
+
+def get_font_path():
+    """
+    環境に応じて日本語フォントのパスを返す関数
+    
+    Returns:
+    str: 日本語フォントのパス
+    """
+    system = platform.system()
+    if system == "Windows":
+        return "C:/Windows/Fonts/msgothic.ttc"
+    elif system == "Darwin":  # macOS
+        # macOS環境で一般的な日本語フォントのパス
+        possible_paths = [
+            "/System/Library/Fonts/ヒラギノ角ゴシック W3.ttc",
+            "/System/Library/Fonts/ヒラギノ角ゴ Pro W3.otf",
+            "/System/Library/Fonts/ヒラギノ明朝 ProN W3.otf",
+            "/Library/Fonts/ヒラギノ角ゴシック W3.ttc",
+            "/Library/Fonts/ヒラギノ角ゴ Pro W3.otf",
+            "/Library/Fonts/ヒラギノ明朝 ProN W3.otf"
+        ]
+        for path in possible_paths:
+            if os.path.exists(path):
+                return path
+        return None
+    elif system == "Linux":
+        # Linux環境で一般的な日本語フォントのパス
+        possible_paths = [
+            "/usr/share/fonts/truetype/noto/NotoSansCJK-Regular.ttc",
+            "/usr/share/fonts/truetype/noto/NotoSansJP-Regular.otf",
+            "/usr/share/fonts/truetype/ipa/ipag.ttf",
+            "/usr/share/fonts/truetype/ipa/ipagp.ttf"
+        ]
+        for path in possible_paths:
+            if os.path.exists(path):
+                return path
+        return None
+    return None
 
 def show(selected_date):
     selected_date_str = selected_date.strftime("%Y-%m-%d")
@@ -113,23 +153,41 @@ def show(selected_date):
 
         # ワードクラウドの表示
         vote_dict = {row[0]: row[1] for row in results}
+        stock_name_dict = {row[2] or row[0]: row[1] for row in results}  # 銘柄名がNoneの場合は銘柄コードを使用
         try:
             from wordcloud import WordCloud
             import matplotlib.pyplot as plt
             
             # 投票結果をキャッシュキーとして使用
             @st.cache_data(ttl=None)  # TTLなし（投票結果が変わるまでキャッシュ有効）
-            def generate_wordcloud(vote_data_str, date_str):
+            def generate_wordcloud(vote_data_str, date_str, use_stock_name=False):
                 vote_dict = eval(vote_data_str)  # 文字列から辞書に戻す
-                wc = WordCloud(width=800, height=400, background_color='white').generate_from_frequencies(vote_dict)
+                # 日本語フォントのパスを取得
+                font_path = get_font_path()
+                if font_path is None:
+                    st.warning("日本語フォントが見つかりません。日本語が正しく表示されない可能性があります。")
+                
+                wc = WordCloud(
+                    width=800,
+                    height=400,
+                    background_color='white',
+                    font_path=font_path
+                ).generate_from_frequencies(vote_dict)
                 fig = plt.figure(figsize=(10, 5))
                 plt.imshow(wc, interpolation='bilinear')
                 plt.axis("off")
                 return fig
             
-            # 投票データを文字列化してキャッシュキーとして使用
+            # 銘柄コードのワードクラウド
+            st.subheader("銘柄コードのワードクラウド")
             vote_data_str = str(vote_dict)
-            fig = generate_wordcloud(vote_data_str, selected_date_str)
+            fig = generate_wordcloud(vote_data_str, selected_date_str, False)
+            st.pyplot(fig)
+            
+            # 銘柄名のワードクラウド
+            st.subheader("銘柄名のワードクラウド")
+            stock_name_data_str = str(stock_name_dict)
+            fig = generate_wordcloud(stock_name_data_str, selected_date_str, True)
             st.pyplot(fig)
             
         except ImportError:
