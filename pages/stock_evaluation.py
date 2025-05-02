@@ -68,6 +68,9 @@ def create_treemap(df, title, currency_symbol, value_type='投票数'):
                      '<br>損益率: ' + df['損益率(%)'].astype(str) + '%' +
                      '<br>損益額: ' + df[f'損益額({currency_symbol})'].astype(str) + currency_symbol)
     df['絶対損益率'] = df['損益率(%)'].abs()
+    
+    # 上昇と下落でカテゴリ分け
+    df['カテゴリ'] = df['損益率(%)'].apply(lambda x: '上昇' if x >= 0 else '下落')
 
     # サイズの基準となる値を選択
     if value_type == '損益率':
@@ -76,7 +79,7 @@ def create_treemap(df, title, currency_symbol, value_type='投票数'):
         values = '投票数'
     
     fig = px.treemap(df,
-                    path=[px.Constant(title), '銘柄名'],
+                    path=[px.Constant(title), 'カテゴリ', '銘柄名'],
                     values=values,
                     color='損益率(%)',
                     color_continuous_scale='RdBu',
