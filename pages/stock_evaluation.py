@@ -232,7 +232,32 @@ def show(selected_date):
             st.subheader("日本株")
             st.session_state.japan_df = pd.DataFrame(japan_results)
             st.session_state.japan_df = st.session_state.japan_df.rename(columns={'損益額': '損益額(円)'})
-            st.dataframe(st.session_state.japan_df)
+            
+            # 投票数で降順ソート
+            st.session_state.japan_df = st.session_state.japan_df.sort_values('投票数', ascending=False)
+            
+            # No.列を追加
+            st.session_state.japan_df.insert(0, 'No.', range(1, len(st.session_state.japan_df) + 1))
+            
+            # 小数点の桁数を設定
+            format_dict = {
+                '始値': '{:.1f}',
+                '終値': '{:.1f}',
+                '損益率(%)': '{:.1f}',
+                '損益額(円)': '{:.1f}'
+            }
+            
+            # 損益率と損益額のスタイリング
+            def color_row(row):
+                color = '#FF0000' if row['損益率(%)'] < 0 else 'royalblue'  # マイナスは濃い赤、プラスはロイヤルブルー
+                return [f'color: {color}; font-weight: bold'] * len(row)
+            
+            styled_df = (st.session_state.japan_df
+                        .style
+                        .format(format_dict)
+                        .apply(color_row, axis=1)
+                        .hide(axis='index'))
+            st.dataframe(styled_df, hide_index=True)
             
             # 日本株のヒートマップ表示
             st.subheader("日本株 損益率ヒートマップ")
@@ -264,7 +289,28 @@ def show(selected_date):
             st.subheader("米国株")
             st.session_state.us_df = pd.DataFrame(us_results)
             st.session_state.us_df = st.session_state.us_df.rename(columns={'損益額': '損益額($)'})
-            st.dataframe(st.session_state.us_df)
+            
+            # 投票数で降順ソート
+            st.session_state.us_df = st.session_state.us_df.sort_values('投票数', ascending=False)
+            
+            # No.列を追加
+            st.session_state.us_df.insert(0, 'No.', range(1, len(st.session_state.us_df) + 1))
+            
+            # 小数点の桁数を設定
+            format_dict = {
+                '始値': '{:.1f}',
+                '終値': '{:.1f}',
+                '損益率(%)': '{:.1f}',
+                '損益額($)': '{:.1f}'
+            }
+            
+            # 損益率と損益額のスタイリング
+            styled_df = (st.session_state.us_df
+                        .style
+                        .format(format_dict)
+                        .apply(color_row, axis=1)
+                        .hide(axis='index'))
+            st.dataframe(styled_df, hide_index=True)
             
             # 米国株のヒートマップ表示
             st.subheader("米国株 損益率ヒートマップ")
