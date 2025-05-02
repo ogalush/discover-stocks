@@ -181,6 +181,10 @@ def show(selected_date):
         st.session_state.japan_df = None
     if 'us_df' not in st.session_state:
         st.session_state.us_df = None
+    if 'japan_value_type' not in st.session_state:
+        st.session_state.japan_value_type = '投票数'
+    if 'us_value_type' not in st.session_state:
+        st.session_state.us_value_type = '投票数'
     
     if st.button("株価を取得"):
         japan_results = []
@@ -343,7 +347,26 @@ def show(selected_date):
         # 株価取得ボタンを押していない場合でも、セッション状態にデータがあれば表示
         if st.session_state.japan_df is not None:
             st.subheader("日本株")
-            st.dataframe(st.session_state.japan_df)
+            
+            # 小数点の桁数を設定
+            format_dict = {
+                '始値': '{:.1f}',
+                '終値': '{:.1f}',
+                '損益率(%)': '{:.1f}',
+                '損益額(円)': '{:.1f}'
+            }
+            
+            # 損益率と損益額のスタイリング
+            def color_row(row):
+                color = '#FF0000' if row['損益率(%)'] < 0 else 'royalblue'  # マイナスは濃い赤、プラスはロイヤルブルー
+                return [f'color: {color}; font-weight: bold'] * len(row)
+            
+            styled_df = (st.session_state.japan_df
+                        .style
+                        .format(format_dict)
+                        .apply(color_row, axis=1)
+                        .hide(axis='index'))
+            st.dataframe(styled_df, hide_index=True)
             
             # 日本株のヒートマップ表示
             st.subheader("日本株 損益率ヒートマップ")
@@ -371,7 +394,22 @@ def show(selected_date):
         
         if st.session_state.us_df is not None:
             st.subheader("米国株")
-            st.dataframe(st.session_state.us_df)
+            
+            # 小数点の桁数を設定
+            format_dict = {
+                '始値': '{:.1f}',
+                '終値': '{:.1f}',
+                '損益率(%)': '{:.1f}',
+                '損益額($)': '{:.1f}'
+            }
+            
+            # 損益率と損益額のスタイリング
+            styled_df = (st.session_state.us_df
+                        .style
+                        .format(format_dict)
+                        .apply(color_row, axis=1)
+                        .hide(axis='index'))
+            st.dataframe(styled_df, hide_index=True)
             
             # 米国株のヒートマップ表示
             st.subheader("米国株 損益率ヒートマップ")
