@@ -71,7 +71,10 @@ def create_treemap(df, title, currency_symbol, value_type='投票数'):
     
     # 上昇と下落でカテゴリ分け
     df['カテゴリ'] = df['損益率(%)'].apply(lambda x: '上昇' if x >= 0 else '下落')
-
+    
+    # インデックスかどうかを判定
+    df['インデックス'] = df['銘柄コード'].isin(['^N225', 'NDX'])
+    
     # サイズの基準となる値を選択
     if value_type == '損益率':
         values = '絶対損益率'
@@ -84,11 +87,20 @@ def create_treemap(df, title, currency_symbol, value_type='投票数'):
                     color='損益率(%)',
                     color_continuous_scale='RdBu',
                     color_continuous_midpoint=0,
-                    custom_data=['表示ラベル'])
+                    custom_data=['表示ラベル', 'インデックス'])
 
-    fig.update_traces(textinfo='text',
-                     text=df['表示ラベル'],
-                     hovertemplate='%{customdata[0]}')
+    # インデックスの場合、枠線を太くして強調
+    fig.update_traces(
+        textinfo='text',
+        text=df['表示ラベル'],
+        hovertemplate='%{customdata[0]}',
+        marker=dict(
+            line=dict(
+                width=[2 if idx else 1 for idx in df['インデックス']],
+                color=['yellow' if idx else 'black' for idx in df['インデックス']]
+            )
+        )
+    )
 
     fig.update_layout(margin=dict(t=50, l=25, r=25, b=25))
     return fig
@@ -111,7 +123,14 @@ def create_scatter(df, title, currency_symbol):
                      '<br>損益率: ' + df['損益率(%)'].astype(str) + '%' +
                      '<br>損益額: ' + df[f'損益額({currency_symbol})'].astype(str) + currency_symbol)
     
-    fig = px.scatter(df,
+    # インデックスかどうかを判定
+    df['インデックス'] = df['銘柄コード'].isin(['^N225', 'NDX'])
+    
+    # インデックスと通常の銘柄で別々のトレースを作成
+    index_df = df[df['インデックス']]
+    normal_df = df[~df['インデックス']]
+    
+    fig = px.scatter(normal_df,
                     x='投票数',
                     y='損益率(%)',
                     color='損益率(%)',
@@ -121,7 +140,34 @@ def create_scatter(df, title, currency_symbol):
                     hover_name='銘柄名',
                     custom_data=['表示ラベル'])
     
+    # インデックスのトレースを追加
+    if not index_df.empty:
+        fig.add_trace(
+            px.scatter(index_df,
+                      x='投票数',
+                      y='損益率(%)',
+                      color='損益率(%)',
+                      color_continuous_scale='RdBu',
+                      color_continuous_midpoint=0,
+                      size='投票数',
+                      hover_name='銘柄名',
+                      custom_data=['表示ラベル'])
+            .update_traces(
+                marker=dict(
+                    symbol='star',
+                    size=10,
+                    line=dict(
+                        width=1,
+                        color='yellow'
+                    )
+                ),
+                showlegend=False
+            )
+            .data[0]
+        )
+    
     fig.update_traces(hovertemplate='%{customdata[0]}')
+    
     fig.update_layout(
         xaxis_title='投票数',
         yaxis_title='損益率(%)',
@@ -192,6 +238,12 @@ def show(selected_date):
         progress_bar = st.progress(0)
         total_stocks = len(voted_stocks)
         
+        # デフォルトのインデックスを追加
+        default_indices = [
+            {'銘柄コード': '^N225', '銘柄名': '日経平均株価', '投票数': 1},
+            {'銘柄コード': 'NDX', '銘柄名': 'NASDAQ-100', '投票数': 1}
+        ]
+        
         for i, (stock_code, vote_count) in enumerate(voted_stocks):
             try:
                 # 進捗バーの更新
@@ -237,6 +289,26 @@ def show(selected_date):
             st.session_state.japan_df = pd.DataFrame(japan_results)
             st.session_state.japan_df = st.session_state.japan_df.rename(columns={'損益額': '損益額(円)'})
             
+            # デフォルトのインデックスを追加
+            for index in default_indices:
+                if index['銘柄コード'] == '^N225':
+                    start_date = (selected_date + timedelta(days=1)).strftime("%Y-%m-%d")
+                    end_date_str = end_date.strftime("%Y-%m-%d")
+                    start_price, end_price = get_stock_price(index['銘柄コード'], start_date, end_date_str)
+                    if start_price is not None and end_price is not None:
+                        profit_rate = ((end_price - start_price) / start_price) * 100
+                        profit_amount = end_price - start_price
+                        index_data = {
+                            '銘柄コード': index['銘柄コード'],
+                            '銘柄名': index['銘柄名'],
+                            '投票数': index['投票数'],
+                            '始値': start_price,
+                            '終値': end_price,
+                            '損益率(%)': round(profit_rate, 2),
+                            '損益額(円)': round(profit_amount, 2)
+                        }
+                        st.session_state.japan_df = pd.concat([st.session_state.japan_df, pd.DataFrame([index_data])], ignore_index=True)
+            
             # 投票数で降順ソート
             st.session_state.japan_df = st.session_state.japan_df.sort_values('投票数', ascending=False)
             
@@ -252,16 +324,20 @@ def show(selected_date):
             }
             
             # 損益率と損益額のスタイリング
-            def color_row(row):
-                color = '#FF0000' if row['損益率(%)'] < 0 else 'royalblue'  # マイナスは濃い赤、プラスはロイヤルブルー
-                return [f'color: {color}; font-weight: bold'] * len(row)
-            
-            styled_df = (st.session_state.japan_df
-                        .style
-                        .format(format_dict)
-                        .apply(color_row, axis=1)
-                        .hide(axis='index'))
-            st.dataframe(styled_df, hide_index=True)
+            def style_df(df):
+                # インデックス用のスタイル
+                def color_row(row):
+                    color = '#FF0000' if row['損益率(%)'] < 0 else 'royalblue'  # マイナスは濃い赤、プラスはロイヤルブルー
+                    is_index = row['銘柄コード'] in ['^N225', 'NDX']
+                    if is_index:
+                        return [f'color: {color}; background-color: rgba(211, 211, 211, 0.2)'] * len(row)
+                    return [f'color: {color}'] * len(row)
+
+                styled = df.style.format(format_dict).apply(color_row, axis=1).hide(axis='index')
+                return styled
+
+            # 日本株のデータフレーム表示
+            st.dataframe(style_df(st.session_state.japan_df), hide_index=True)
             
             # 日本株のヒートマップ表示
             st.subheader("日本株 損益率ヒートマップ")
@@ -294,6 +370,26 @@ def show(selected_date):
             st.session_state.us_df = pd.DataFrame(us_results)
             st.session_state.us_df = st.session_state.us_df.rename(columns={'損益額': '損益額($)'})
             
+            # デフォルトのインデックスを追加
+            for index in default_indices:
+                if index['銘柄コード'] == 'NDX':
+                    start_date = (selected_date + timedelta(days=1)).strftime("%Y-%m-%d")
+                    end_date_str = end_date.strftime("%Y-%m-%d")
+                    start_price, end_price = get_stock_price(index['銘柄コード'], start_date, end_date_str)
+                    if start_price is not None and end_price is not None:
+                        profit_rate = ((end_price - start_price) / start_price) * 100
+                        profit_amount = end_price - start_price
+                        index_data = {
+                            '銘柄コード': index['銘柄コード'],
+                            '銘柄名': index['銘柄名'],
+                            '投票数': index['投票数'],
+                            '始値': start_price,
+                            '終値': end_price,
+                            '損益率(%)': round(profit_rate, 2),
+                            '損益額($)': round(profit_amount, 2)
+                        }
+                        st.session_state.us_df = pd.concat([st.session_state.us_df, pd.DataFrame([index_data])], ignore_index=True)
+            
             # 投票数で降順ソート
             st.session_state.us_df = st.session_state.us_df.sort_values('投票数', ascending=False)
             
@@ -308,13 +404,8 @@ def show(selected_date):
                 '損益額($)': '{:.1f}'
             }
             
-            # 損益率と損益額のスタイリング
-            styled_df = (st.session_state.us_df
-                        .style
-                        .format(format_dict)
-                        .apply(color_row, axis=1)
-                        .hide(axis='index'))
-            st.dataframe(styled_df, hide_index=True)
+            # 米国株のデータフレーム表示
+            st.dataframe(style_df(st.session_state.us_df), hide_index=True)
             
             # 米国株のヒートマップ表示
             st.subheader("米国株 損益率ヒートマップ")
@@ -357,16 +448,20 @@ def show(selected_date):
             }
             
             # 損益率と損益額のスタイリング
-            def color_row(row):
-                color = '#FF0000' if row['損益率(%)'] < 0 else 'royalblue'  # マイナスは濃い赤、プラスはロイヤルブルー
-                return [f'color: {color}; font-weight: bold'] * len(row)
-            
-            styled_df = (st.session_state.japan_df
-                        .style
-                        .format(format_dict)
-                        .apply(color_row, axis=1)
-                        .hide(axis='index'))
-            st.dataframe(styled_df, hide_index=True)
+            def style_df(df):
+                # インデックス用のスタイル
+                def color_row(row):
+                    color = '#FF0000' if row['損益率(%)'] < 0 else 'royalblue'  # マイナスは濃い赤、プラスはロイヤルブルー
+                    is_index = row['銘柄コード'] in ['^N225', 'NDX']
+                    if is_index:
+                        return [f'color: {color}; background-color: rgba(211, 211, 211, 0.2)'] * len(row)
+                    return [f'color: {color}'] * len(row)
+
+                styled = df.style.format(format_dict).apply(color_row, axis=1).hide(axis='index')
+                return styled
+
+            # 日本株のデータフレーム表示
+            st.dataframe(style_df(st.session_state.japan_df), hide_index=True)
             
             # 日本株のヒートマップ表示
             st.subheader("日本株 損益率ヒートマップ")
@@ -403,13 +498,8 @@ def show(selected_date):
                 '損益額($)': '{:.1f}'
             }
             
-            # 損益率と損益額のスタイリング
-            styled_df = (st.session_state.us_df
-                        .style
-                        .format(format_dict)
-                        .apply(color_row, axis=1)
-                        .hide(axis='index'))
-            st.dataframe(styled_df, hide_index=True)
+            # 米国株のデータフレーム表示
+            st.dataframe(style_df(st.session_state.us_df), hide_index=True)
             
             # 米国株のヒートマップ表示
             st.subheader("米国株 損益率ヒートマップ")
