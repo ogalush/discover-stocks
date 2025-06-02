@@ -1,9 +1,12 @@
-import os
 import mysql.connector
-from datetime import datetime
+import os
 import streamlit as st
+from datetime import datetime
+from dotenv import load_dotenv
 
 class DBConfig:
+    # 環境変数読み込み
+    load_dotenv()
     DB_HOST = os.environ.get("DB_HOST", "127.0.0.1")
     DB_USER = os.environ.get("DB_USER", "mysqluser")
     DB_PASSWORD = os.environ.get("DB_PASSWORD", "password")
@@ -15,6 +18,7 @@ def get_connection():
         user=DBConfig.DB_USER,
         password=DBConfig.DB_PASSWORD,
         database=DBConfig.DB_NAME,
+        connect_timeout=30
     )
     return conn
 
@@ -45,7 +49,7 @@ def init_db():
          WHERE table_schema = %s AND table_name = 'survey' AND index_name = 'idx_survey_date_stock_code'
         """, (DBConfig.DB_NAME,))
     if c.fetchone()[0] == 0:
-        c.execute("CREATE INDEX idx_survey_date_stock_code ON survey (survey_date(10), stock_code(5));")
+        c.execute("CREATE INDEX idx_survey_date_stock_code ON survey (survey_date(10), stock_code(10));")
 
     # 投票結果を保存するテーブル
     c.execute(
@@ -64,7 +68,7 @@ def init_db():
          WHERE table_schema = %s AND table_name = 'vote' AND index_name = 'idx_vote_date_stock_code'
         """, (DBConfig.DB_NAME,))
     if c.fetchone()[0] == 0:
-        c.execute("CREATE INDEX idx_vote_date_stock_code ON vote (vote_date(10), stock_code(5));")
+        c.execute("CREATE INDEX idx_vote_date_stock_code ON vote (vote_date(10), stock_code(10));")
 
     # 銘柄マスタテーブルを追加
     c.execute(
