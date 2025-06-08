@@ -46,8 +46,8 @@ def init_db():
     c.execute(
         """
         SELECT COUNT(*) FROM information_schema.statistics
-         WHERE table_schema = %s AND table_name = 'survey' AND index_name = 'idx_survey_date_stock_code'
-        """, (DBConfig.DB_NAME,))
+         WHERE table_schema = %s AND table_name = %s AND index_name = %s
+        """, (DBConfig.DB_NAME, 'survey', 'idx_survey_date_stock_code'))
     if c.fetchone()[0] == 0:
         c.execute("CREATE INDEX idx_survey_date_stock_code ON survey (survey_date(10), stock_code(10));")
 
@@ -65,8 +65,8 @@ def init_db():
     c.execute(
         """
         SELECT COUNT(*) FROM information_schema.statistics
-         WHERE table_schema = %s AND table_name = 'vote' AND index_name = 'idx_vote_date_stock_code'
-        """, (DBConfig.DB_NAME,))
+         WHERE table_schema = %s AND table_name = %s AND index_name = %s
+        """, (DBConfig.DB_NAME, 'vote', 'idx_vote_date_stock_code'))
     if c.fetchone()[0] == 0:
         c.execute("CREATE INDEX idx_vote_date_stock_code ON vote (vote_date(10), stock_code(10));")
 
