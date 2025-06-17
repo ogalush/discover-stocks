@@ -55,9 +55,42 @@ def show(selected_date):
     st.title("投票結果確認")
     st.write(f"【対象日】{selected_date_str}")
     
-    # voteテーブルから、対象日の各銘柄の投票数を集計（多い順）
+    # 投票数の合計と投票ボタンが押された回数を取得
     conn = get_connection()
     c = conn.cursor(buffered=True)
+    
+    # 投票数の合計を取得
+    c.execute(
+        """
+        SELECT COUNT(*) as total_votes
+        FROM vote
+        WHERE vote_date = ?
+        """,
+        (selected_date_str,)
+    )
+    result = c.fetchone()
+    total_votes = result[0] if result is not None else 0
+    
+    # 投票ボタンが押された回数を取得（created_atが同じものを1回としてカウント）
+    c.execute(
+        """
+        SELECT COUNT(DISTINCT created_at) as vote_sessions
+        FROM vote
+        WHERE vote_date = ?
+        """,
+        (selected_date_str,)
+    )
+    vote_sessions_result = c.fetchone()
+    vote_sessions = vote_sessions_result[0] if vote_sessions_result is not None else 0
+    
+    # 投票情報を表示
+    col1, col2 = st.columns(2)
+    with col1:
+        st.metric("投票数の合計", total_votes)
+    with col2:
+        st.metric("投票ボタンが押された回数", vote_sessions)
+    
+    # voteテーブルから、対象日の各銘柄の投票数を集計（多い順）
     c.execute(
         """
         SELECT v.stock_code, COUNT(*) as vote_count, m.stock_name
