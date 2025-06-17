@@ -64,7 +64,7 @@ def show(selected_date):
         """
         SELECT COUNT(*) as total_votes
         FROM vote
-        WHERE vote_date = ?
+        WHERE vote_date = %s
         """,
         (selected_date_str,)
     )
@@ -76,7 +76,7 @@ def show(selected_date):
         """
         SELECT COUNT(DISTINCT created_at) as vote_sessions
         FROM vote
-        WHERE vote_date = ?
+        WHERE vote_date = %s
         """,
         (selected_date_str,)
     )
