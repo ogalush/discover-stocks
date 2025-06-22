@@ -50,7 +50,7 @@ def show(selected_date):
     sql_template = """
         SELECT a.vote_date, COUNT(a.id) as total_votes, COUNT(DISTINCT a.created_at) as vote_sessions
          FROM vote AS a
-         WHERE a.vote_date BETWEEN ? AND ?
+         WHERE a.vote_date BETWEEN %s AND %s
          GROUP BY a.vote_date ORDER BY a.vote_date ASC;
     """
     c = conn.cursor()
