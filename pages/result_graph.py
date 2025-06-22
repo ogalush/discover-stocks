@@ -107,7 +107,7 @@ def show(selected_date):
             for result in result_list:
                 st.subheader(result["result_key"])
                 df = convert_to_df(result["result_value"])
-                filtered_df = df[(df["日付"] >= pd.to_datetime(start_date)) & (df["日付"] <= pd.to_datetime(end_date))]
+                filtered_df = df[(df["日付"] >= pd.to_datetime(start_date)) & (df["日付"] <= pd.to_datetime(end_date))].copy()
                 filtered_df["日付"] = filtered_df["日付"].dt.strftime("%m月%d日") # 日付の表示形式変換
 
                 options = st.multiselect("銘柄コードを選択してください:", sorted(df["銘柄コード"].unique().tolist()), default=[])
@@ -126,7 +126,7 @@ def show(selected_date):
             df_vote["日付"] = pd.to_datetime(df_vote["日付"])  # 日付をDatetime型に変換
 
             # スライダーに従って日付フィルタ
-            filtered_df_vote = df_vote[(df_vote["日付"] >= pd.to_datetime(start_date)) & (df_vote["日付"] <= pd.to_datetime(end_date))]
+            filtered_df_vote = df_vote[(df_vote["日付"] >= pd.to_datetime(start_date)) & (df_vote["日付"] <= pd.to_datetime(end_date))].copy()
             filtered_df_vote["日付"] = filtered_df_vote["日付"].dt.strftime("%m月%d日")
 
             # 投票数のグラフ
