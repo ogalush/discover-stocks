@@ -184,6 +184,7 @@ def save_vote_data(selected_date_str, results):
         
         conn = get_connection()
         c = conn.cursor(buffered=True)
+        c.execute("START TRANSACTION;")
         now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         
         for i, code in enumerate(selected_codes):

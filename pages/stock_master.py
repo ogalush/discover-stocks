@@ -158,6 +158,7 @@ def show_bulk_import():
 def update_stock_name(stock_code, new_name):
     conn = get_connection()
     c = conn.cursor(buffered=True)
+    c.execute("START TRANSACTION;")
     c.execute(
         "UPDATE stock_master SET stock_name = %s WHERE stock_code = %s",
         (new_name, stock_code)
@@ -170,6 +171,7 @@ def save_new_stock(stock_code, stock_name):
     conn = get_connection()
     c = conn.cursor(buffered=True)
     try:
+        c.execute("START TRANSACTION;")
         c.execute(
             """
             INSERT INTO stock_master (stock_code, stock_name)
@@ -189,7 +191,8 @@ def save_new_stock(stock_code, stock_name):
 def save_bulk_stocks(df):
     conn = get_connection()
     c = conn.cursor(buffered=True)
-    
+    c.execute("START TRANSACTION;")
+
     success_count = 0
     update_count = 0
     error_count = 0

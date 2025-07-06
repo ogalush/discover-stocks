@@ -95,9 +95,10 @@ def show_import():
                     conn = get_connection()
                     c = conn.cursor(buffered=True)
 
-                    # トランザクション開始
-                    c.execute("START TRANSACTION;")
                     try:
+                        # トランザクション開始
+                        c.execute("START TRANSACTION;")
+
                         # 各テーブルのデータをインポート
                         for table_name, records in import_data['tables'].items():
                             # テーブルを空にする

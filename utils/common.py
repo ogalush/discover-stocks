@@ -109,6 +109,7 @@ def get_stock_name(stock_code):
         if 'shortName' in info:
             stock_name = info['shortName']
             # stock_masterテーブルに登録
+            conn.execute("START TRANSACTION;")
             cursor.execute(
                 "INSERT INTO stock_master (stock_code, stock_name) VALUES (%s, %s)",
                 (stock_code, stock_name)

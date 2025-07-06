@@ -61,8 +61,8 @@ def show(selected_date):
 def save_survey_data(selected_date_str):
     conn = get_connection()
     c = conn.cursor(buffered=True)
+    c.execute("START TRANSACTION;")
     now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-    
     for i in range(MAX_SETS):
         if f"confirmed_{i}" in st.session_state:
             code = st.session_state[f"confirmed_{i}"]
