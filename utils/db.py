@@ -38,7 +38,7 @@ def init_db():
         CREATE TABLE IF NOT EXISTS survey (
             id INTEGER PRIMARY KEY AUTO_INCREMENT,
             survey_date TEXT NOT NULL,
-            stock_code VARCHAR(10) NOT NULL,
+            stock_code VARCHAR(30) NOT NULL,
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         )
         """
@@ -49,7 +49,7 @@ def init_db():
          WHERE table_schema = %s AND table_name = %s AND index_name = %s
         """, (DBConfig.DB_NAME, 'survey', 'idx_survey_date_stock_code'))
     if c.fetchone()[0] == 0:
-        c.execute("CREATE INDEX idx_survey_date_stock_code ON survey (survey_date(10), stock_code(10));")
+        c.execute("CREATE INDEX idx_survey_date_stock_code ON survey (survey_date(10), stock_code(30));")
 
     # 投票結果を保存するテーブル
     c.execute(
@@ -57,7 +57,7 @@ def init_db():
         CREATE TABLE IF NOT EXISTS vote (
             id INTEGER PRIMARY KEY AUTO_INCREMENT,
             vote_date TEXT NOT NULL,
-            stock_code VARCHAR(10) NOT NULL,
+            stock_code VARCHAR(30) NOT NULL,
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         )
         """
@@ -68,13 +68,13 @@ def init_db():
          WHERE table_schema = %s AND table_name = %s AND index_name = %s
         """, (DBConfig.DB_NAME, 'vote', 'idx_vote_date_stock_code'))
     if c.fetchone()[0] == 0:
-        c.execute("CREATE INDEX idx_vote_date_stock_code ON vote (vote_date(10), stock_code(10));")
+        c.execute("CREATE INDEX idx_vote_date_stock_code ON vote (vote_date(10), stock_code(30));")
 
     # 銘柄マスタテーブルを追加
     c.execute(
         """
         CREATE TABLE IF NOT EXISTS stock_master (
-            stock_code VARCHAR(10) PRIMARY KEY,
+            stock_code VARCHAR(30) PRIMARY KEY,
             stock_name TEXT NOT NULL
         )
         """
