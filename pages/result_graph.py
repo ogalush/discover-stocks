@@ -111,9 +111,7 @@ def show(selected_date):
                         mode='lines+markers',
                         name=stock_code,
                         customdata=[[stock_code]] * len(df_selected),  # 銘柄名を customdata として渡す
-                        hovertemplate='%{customdata[0]}<br>'
-                                      '票数 %{y}<br>'
-                                      '%{x|%Y-%m-%d}<extra></extra>',
+                        hovertemplate='<extra>◆</extra>%{customdata[0]}<br>%{x|%Y-%m-%d}  %{y} 票',
                         connectgaps=True  # 欠損があっても線を繋げる
                     ))
 
