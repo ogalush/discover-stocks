@@ -1559,16 +1559,18 @@ def show(selected_date):
                 # 年選択
                 with col2:
                     year_index = list(range(min_year, max_year + 1)).index(st.session_state.selected_year_monthly) if st.session_state.selected_year_monthly in range(min_year, max_year + 1) else max_year - min_year
-                    selected_year = st.selectbox("年", range(min_year, max_year + 1), index=year_index, key="year_monthly")
+                    selected_year = st.selectbox("年", range(min_year, max_year + 1), index=year_index)
                     if selected_year != st.session_state.selected_year_monthly:
                         st.session_state.selected_year_monthly = selected_year
+                        st.rerun()
                 
                 # 月選択
                 with col3:
                     month_index = st.session_state.selected_month_monthly - 1 if 1 <= st.session_state.selected_month_monthly <= 12 else 11
-                    selected_month = st.selectbox("月", range(1, 13), index=month_index, key="month_monthly")
+                    selected_month = st.selectbox("月", range(1, 13), index=month_index)
                     if selected_month != st.session_state.selected_month_monthly:
                         st.session_state.selected_month_monthly = selected_month
+                        st.rerun()
                 
                 # 次月ボタン
                 with col4:
