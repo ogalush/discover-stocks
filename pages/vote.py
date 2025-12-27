@@ -6,6 +6,7 @@ import csv
 from io import StringIO
 import pandas as pd
 from io import BytesIO
+import base64
 
 def show(selected_date):
     selected_date_str = selected_date.strftime("%Y-%m-%d")
@@ -205,3 +206,35 @@ def save_vote_data(selected_date_str, results):
         progress_bar.progress(1.0)
         st.success("投票が保存されました。")
         st.balloons()
+
+## 投票に必要なCSVをCronに取得させる
+def exportcsv(selected_date):
+    selected_date_str = selected_date.strftime("%Y-%m-%d")
+
+    # surveyテーブルから対象日の各銘柄のアンケート票数を集計
+    conn = get_connection()
+    c = conn.cursor()
+    c.execute(
+        """
+        SELECT s.stock_code, COUNT(*) as survey_count, m.stock_name
+        FROM survey s
+        LEFT JOIN stock_master m ON s.stock_code = m.stock_code
+        WHERE s.survey_date = ?
+        GROUP BY s.stock_code
+        """,
+        (selected_date_str,)
+    )
+    results = c.fetchall()
+    conn.close()
+
+    if results:
+        sorted_results = sorted(results, key=lambda x: "アンケート票数 降順", reverse=True)
+        sort_suffix = "_票数順"
+        sorted_results_with_thresh = format_vote_data_with_thresh(results)
+        filename = f"銘柄発掘{selected_date.strftime('%Y%m%d')}{sort_suffix}_票数付.txt"
+        b64 = base64.b64encode(sorted_results_with_thresh.encode("utf-8")).decode("utf-8")
+
+        st.markdown(
+            f'<a href="data:text/plain;base64,{b64}" download="{filename}">Download</a>',
+            unsafe_allow_html=True
+        )

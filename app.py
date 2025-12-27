@@ -43,6 +43,8 @@ elif page == 'survey':
     survey.show(selected_date)
 elif page == 'vote':
     vote.show(selected_date)
+elif page == 'votecsv':
+    vote.exportcsv(selected_date)
 elif page == 'result':
     result.show(selected_date)
 elif page == 'result_graph':
