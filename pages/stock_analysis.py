@@ -7,6 +7,7 @@ from io import BytesIO
 import mplfinance as mpf
 import matplotlib
 import os
+import zipfile
 from matplotlib.font_manager import FontProperties
 from functools import lru_cache
 from openpyxl.styles import numbers
@@ -246,6 +247,26 @@ def show(selected_date):
                 file_name=f"stock_data_{datetime.now().strftime('%Y%m%d_%H%M%S')}.xlsx",
                 mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
                 key="download_excel"
+            )
+            
+            # CSV一括ダウンロード（ZIPファイル）
+            zip_buffer = BytesIO()
+            with zipfile.ZipFile(zip_buffer, 'w', zipfile.ZIP_DEFLATED) as zip_file:
+                for code, df in st.session_state['stock_data'].items():
+                    csv_data = df.to_csv().encode('utf-8-sig')
+                    # UTF-8フラグを設定してファイル名の文字化けを防止
+                    file_name = f"{code}_{get_stock_name(code)}_stock_data.csv"
+                    zip_info = zipfile.ZipInfo(file_name)
+                    zip_info.flag_bits |= 0x800  # UTF-8フラグ（bit 11）を設定
+                    zip_info.compress_type = zipfile.ZIP_DEFLATED
+                    zip_file.writestr(zip_info, csv_data)
+            
+            st.download_button(
+                label="一括ダウンロード（CSV/ZIP）",
+                data=zip_buffer.getvalue(),
+                file_name=f"stock_data_{datetime.now().strftime('%Y%m%d_%H%M%S')}.zip",
+                mime="application/zip",
+                key="download_csv_zip"
             )
         
         # 個別のデータ表示
