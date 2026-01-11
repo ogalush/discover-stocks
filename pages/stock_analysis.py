@@ -184,26 +184,35 @@ def show(selected_date):
         
         if st.button("投票結果を挿入", key="insert_vote_results"):
             vote_date_str = vote_date.strftime("%Y-%m-%d")
-            vote_results = get_vote_results_top_n(vote_date_str, insert_count)
             
-            if vote_results:
-                # 銘柄コードのみを抽出
-                new_codes = [code for code, _ in vote_results]
+            # デバッグ情報
+            st.info(f"DEBUG: 取得を試みる日付: {vote_date_str}")
+            st.info(f"DEBUG: 取得件数上限: {insert_count}")
+            
+            try:
+                vote_results = get_vote_results_top_n(vote_date_str, insert_count)
+                st.info(f"DEBUG: 取得結果: {len(vote_results) if vote_results else 0}件")
                 
-                if insert_mode == "置換（既存をクリア）":
-                    st.session_state['stock_codes_input'] = ", ".join(new_codes)
-                else:  # 追加
-                    existing_codes = [code.strip() for code in st.session_state['stock_codes_input'].split(",") if code.strip()]
-                    # 重複を除いて追加
-                    for code in new_codes:
-                        if code not in existing_codes:
-                            existing_codes.append(code)
-                    st.session_state['stock_codes_input'] = ", ".join(existing_codes)
-                
-                st.success(f"{len(new_codes)}件の銘柄コードを挿入しました。")
-                st.rerun()
-            else:
-                st.warning("指定された日付に投票結果がありません。")
+                if vote_results:
+                    # 銘柄コードのみを抽出
+                    new_codes = [code for code, _ in vote_results]
+                    
+                    if insert_mode == "置換（既存をクリア）":
+                        st.session_state['stock_codes_input'] = ", ".join(new_codes)
+                    else:  # 追加
+                        existing_codes = [code.strip() for code in st.session_state['stock_codes_input'].split(",") if code.strip()]
+                        # 重複を除いて追加
+                        for code in new_codes:
+                            if code not in existing_codes:
+                                existing_codes.append(code)
+                        st.session_state['stock_codes_input'] = ", ".join(existing_codes)
+                    
+                    st.success(f"{len(new_codes)}件の銘柄コードを挿入しました。")
+                    st.rerun()
+                else:
+                    st.warning("指定された日付に投票結果がありません。")
+            except Exception as e:
+                st.error(f"DEBUG: 例外発生: {type(e).__name__}: {str(e)}")
 
     # 入力された銘柄コードをリスト化
     stock_code_list = [code.strip() for code in stock_codes.split(",") if code.strip()][:MAX_STOCKS]
