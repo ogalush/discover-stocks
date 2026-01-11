@@ -142,25 +142,8 @@ def show(selected_date):
     # 銘柄コード入力のセッション状態を初期化
     if 'stock_codes_input' not in st.session_state:
         st.session_state['stock_codes_input'] = ""
-    
-    # 挿入処理のフラグをチェック（text_area描画前に更新）
-    if 'pending_insert_codes' in st.session_state and st.session_state['pending_insert_codes']:
-        st.session_state['stock_codes_input'] = st.session_state['pending_insert_codes']
-        st.session_state['pending_insert_codes'] = None
-        st.success("銘柄コードを挿入しました。")
 
-    # 銘柄コード入力
-    stock_codes = st.text_area(
-        "銘柄コードをカンマ区切りで入力（例: 7203, 6758）",
-        value=st.session_state['stock_codes_input'],
-        help="最大{}個まで".format(MAX_STOCKS),
-        key="stock_codes_textarea"
-    )
-    
-    # 入力値をセッション状態に保存
-    st.session_state['stock_codes_input'] = stock_codes
-
-    # 投票結果から挿入機能
+    # 投票結果から挿入機能（テキストエリアより前に配置し、同一ランで反映）
     with st.expander("📊 投票結果から銘柄を挿入", expanded=True):
         col_vote1, col_vote2 = st.columns(2)
         with col_vote1:
@@ -208,13 +191,24 @@ def show(selected_date):
                                 existing_codes.append(code)
                         new_value = ", ".join(existing_codes)
                     
-                    # フラグにセットしてrerun
-                    st.session_state['pending_insert_codes'] = new_value
-                    st.rerun()
+                    # セッション状態を即時更新して同一ランで反映
+                    st.session_state['stock_codes_input'] = new_value
+                    st.success(f"{len(new_codes)}件の銘柄コードを挿入しました。")
                 else:
                     st.warning("指定された日付に投票結果がありません。")
             except Exception as e:
                 st.error(f"エラーが発生しました: {str(e)}")
+
+    # 銘柄コード入力（挿入結果を含むセッション状態を表示）
+    stock_codes = st.text_area(
+        "銘柄コードをカンマ区切りで入力（例: 7203, 6758）",
+        value=st.session_state['stock_codes_input'],
+        help="最大{}個まで".format(MAX_STOCKS),
+        key="stock_codes_textarea"
+    )
+    
+    # 入力値をセッション状態に保存
+    st.session_state['stock_codes_input'] = stock_codes
 
     # 入力された銘柄コードをリスト化
     stock_code_list = [code.strip() for code in stock_codes.split(",") if code.strip()][:MAX_STOCKS]
