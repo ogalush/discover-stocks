@@ -193,7 +193,16 @@ def show(selected_date):
                     
                     # セッション状態を即時更新して同一ランで反映
                     st.session_state['stock_codes_input'] = new_value
-                    st.success(f"{len(new_codes)}件の銘柄コードを挿入しました。")
+                    st.success(
+                        f"{len(new_codes)}件の銘柄コードを挿入しました。下の枠からコピーできます。"
+                    )
+                    st.text_area(
+                        "挿入結果プレビュー",
+                        value=new_value,
+                        height=120,
+                        key="inserted_codes_preview",
+                        disabled=True
+                    )
                 else:
                     st.warning("指定された日付に投票結果がありません。")
             except Exception as e:
