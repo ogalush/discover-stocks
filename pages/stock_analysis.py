@@ -208,7 +208,8 @@ def show(selected_date):
                         st.session_state['stock_codes_input'] = ", ".join(existing_codes)
                     
                     st.success(f"{len(new_codes)}件の銘柄コードを挿入しました。")
-                    st.rerun()
+                    st.info(f"DEBUG: 挿入後のセッション状態: {st.session_state['stock_codes_input'][:100]}...")
+                    # st.rerun()  # Azure環境でセッション状態が失われる問題のため一時的にコメントアウト
                 else:
                     st.warning("指定された日付に投票結果がありません。")
             except Exception as e:
