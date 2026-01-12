@@ -23,6 +23,10 @@ def init_session_state():
         st.session_state['vote_input_codes'] = ""
     if 'direct_input_codes' not in st.session_state:
         st.session_state['direct_input_codes'] = ""
+    if 'vote_input_codes_area' not in st.session_state:
+        st.session_state['vote_input_codes_area'] = ""
+    if 'direct_input_codes_area' not in st.session_state:
+        st.session_state['direct_input_codes_area'] = ""
 
 @lru_cache(maxsize=400)
 def get_stock_data(stock_code, start_date, end_date):
@@ -204,7 +208,8 @@ def show(selected_date):
                     
                     # セッション状態を即時更新
                     st.session_state['vote_input_codes'] = new_value
-                    st.success(f"{len(new_codes)}件の銘柄コードを挿入しました。")
+                    st.session_state['vote_input_codes_area'] = new_value
+                    st.rerun()
                 else:
                     st.warning("指定された日付に投票結果がありません。")
             except Exception as e:
@@ -213,7 +218,6 @@ def show(selected_date):
         # 編集可能なテキストエリア
         stock_codes_for_analysis = st.text_area(
             "挿入結果プレビュー（編集可能）",
-            value=st.session_state['vote_input_codes'],
             height=120,
             key="vote_input_codes_area",
             help=f"最大{MAX_STOCKS}個まで"
@@ -225,9 +229,9 @@ def show(selected_date):
         # 直接入力モード
         stock_codes_for_analysis = st.text_area(
             "銘柄コードをカンマ区切りで入力（例: 7203, 6758）",
-            value=st.session_state['direct_input_codes'],
-            help=f"最大{MAX_STOCKS}個まで",
-            key="direct_input_codes_area"
+            height=120,
+            key="direct_input_codes_area",
+            help=f"最大{MAX_STOCKS}個まで"
         )
         # 入力値をセッション状態に同期
         st.session_state['direct_input_codes'] = stock_codes_for_analysis
