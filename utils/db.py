@@ -54,6 +54,7 @@ def init_db():
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             vote_date TEXT NOT NULL,
             stock_code TEXT NOT NULL,
+            confidence_score INTEGER,
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         )
         """

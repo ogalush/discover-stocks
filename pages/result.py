@@ -94,7 +94,7 @@ def show(selected_date):
     # voteテーブルから、対象日の各銘柄の投票数を集計（多い順）
     c.execute(
         """
-        SELECT v.stock_code, COUNT(*) as vote_count, m.stock_name
+        SELECT v.stock_code, COUNT(*) as vote_count, m.stock_name, AVG(v.confidence_score) AS confidence_score
         FROM vote v
         LEFT JOIN stock_master m ON v.stock_code = m.stock_code
         WHERE v.vote_date = ?
@@ -331,25 +331,32 @@ def show(selected_date):
         )
         st.markdown("---")
         st.write("投票結果")
-        header_cols = st.columns([0.5, 1, 2, 1])
+        header_cols = st.columns([0.5, 1, 2, 1, 1])
         header_cols[0].write("No.")
         header_cols[1].write("銘柄コード")
         header_cols[2].write("銘柄名")
         header_cols[3].write("投票数")
+        header_cols[4].write("平均点数")
         
         for index, row in enumerate(results, 1):
-            stock_code, vote_count, stock_name = row
+            stock_code, vote_count, stock_name, confidence_score = row
             display_name = stock_name or stock_code  # stock_nameがNoneの場合はstock_codeを使用
             url = f"https://jp.tradingview.com/chart/?symbol={stock_code}"
             stock_name_link = f'<a href="{url}" target="_blank" rel="noopener noreferrer">{display_name}</a>'
             stock_code_mark = f'<span data-stock-code="{stock_code}">{stock_code}</span>'
 
-            cols = st.columns([0.5, 1, 2, 1])
+            cols = st.columns([0.5, 1, 2, 1, 1])
             cols[0].write(f"{index}")
             cols[1].markdown(stock_code_mark, unsafe_allow_html=True)
             cols[2].markdown(stock_name_link, unsafe_allow_html=True)
             
             percentage = (vote_count / vote_sessions * 100) if vote_sessions > 0 else 0
             cols[3].write(f"{vote_count} ({percentage:.1f}%)")
+
+            display_score = "-"
+            if confidence_score is not None:
+                display_score = f"{confidence_score:.1f}"
+            cols[4].text(f"{display_score}")
+
     else:
         st.write("対象日の投票結果はまだありません。") 

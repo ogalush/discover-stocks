@@ -2,7 +2,7 @@ import streamlit as st
 import re
 from datetime import datetime
 from utils.db import get_connection
-from utils.common import MAX_SETS, get_stock_name
+from utils.common import MAX_SETS, DUMMY_STOCK_CODE, get_stock_name
 
 def show(selected_date):
     selected_date_str = selected_date.strftime("%Y-%m-%d")
@@ -11,12 +11,14 @@ def show(selected_date):
     st.write(f"【対象日】{selected_date_str}")
     
     # 入力方法の説明を追加
-    st.info("""
+    st.info(f"""
     【銘柄コード入力方法】
     1. 銘柄コードを入力（半角英数字・大文字とピリオドのみ）
     2. 「確定」ボタンをクリックして入力内容を確認
     3. 銘柄名のリンクをクリックすると、TradingViewでチャートを確認できます
     4. 全ての入力が完了したら下部の「送信」ボタンを押してください
+
+    ※  今回は該当なしという場合は、銘柄コード「{DUMMY_STOCK_CODE}」を登録してください
     """)
     st.markdown("---")
     
@@ -36,7 +38,7 @@ def show(selected_date):
                     st.session_state[f"stock_name_{i}"] = stock_name
                     st.success(f"銘柄コード {code_input} を確定しました。")
                     # 銘柄名が銘柄コードと同じ場合は警告を表示
-                    if stock_name == code_input:
+                    if stock_name == code_input and code_input != DUMMY_STOCK_CODE:
                         st.warning("銘柄名が取得できませんでした。銘柄コードが正しいか確認してください。")
                 else:
                     st.error("入力が不正です。半角英数字・大文字とピリオドのみを使用してください。")

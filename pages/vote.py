@@ -136,23 +136,26 @@ def show(selected_date):
         st.write("最新の集計結果（投票前のアンケート集計）")
         with st.form("vote_form"):
             # 表形式で表示
-            header_cols = st.columns([0.5, 1, 1, 1])
+            header_cols = st.columns([0.5, 1, 1, 1, 1])
             header_cols[0].write("No.")
             header_cols[1].write("銘柄コード投票")
             header_cols[2].write("銘柄名")
             header_cols[3].write("アンケート票数")
+            header_cols[4].write("点数")
 
             for index, row in enumerate(sorted_results, 1):
                 stock_code, survey_count, stock_name = row
                 display_name = stock_name or stock_code  # stock_nameがNoneの場合はstock_codeを使用
                 url = f"https://jp.tradingview.com/chart/?symbol={stock_code}"
                 stock_name_link = f'<a href="{url}" target="_blank" rel="noopener noreferrer">{display_name}</a>'
+                options = [""] + [str(i) for i in reversed(range(1, 11))]
 
-                cols = st.columns([0.5, 1, 1, 1])
+                cols = st.columns([0.5, 1, 1, 1, 1])
                 cols[0].write(f"{index}")
                 cols[1].checkbox(stock_code, key=f"checkbox_{stock_code}")
                 cols[2].markdown(stock_name_link, unsafe_allow_html=True)
                 cols[3].write(survey_count)
+                cols[4].selectbox("点数", options, index=0, key=f"confidence_{stock_code}", label_visibility="collapsed")
 
             st.markdown("---")
 
@@ -172,10 +175,12 @@ def show(selected_date):
 
 def save_vote_data(selected_date_str, results):
     selected_codes = []
+    confidence_scores = {}
     for row in results:
         stock_code = row[0]
         if st.session_state.get(f"checkbox_{stock_code}"):
             selected_codes.append(stock_code)
+            confidence_scores[stock_code] = st.session_state.get(f"confidence_{stock_code}") or None
     
     if len(selected_codes) > MAX_VOTE_SELECTION:
         st.error(f"投票は最大{MAX_VOTE_SELECTION}件まで選択可能です。現在 {len(selected_codes)} 件選択されています。")
@@ -191,11 +196,10 @@ def save_vote_data(selected_date_str, results):
         conn = get_connection()
         c = conn.cursor()
         now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-        
         for i, code in enumerate(selected_codes):
             c.execute(
-                "INSERT INTO vote (vote_date, stock_code, created_at) VALUES (?, ?, ?)",
-                (selected_date_str, code, now)
+                "INSERT INTO vote (vote_date, stock_code, confidence_score, created_at) VALUES (?, ?, ?, ?)",
+                (selected_date_str, code, confidence_scores[code], now)
             )
             # 進捗バーを更新
             progress = (i + 1) / len(selected_codes)
